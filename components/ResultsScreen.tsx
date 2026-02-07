@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
+import { useNavigate } from 'react-router-dom';
 import { Button } from './Button';
 import { 
   InterviewResult, 
@@ -9,9 +10,10 @@ import {
   TranscriptEntry
 } from '../types';
 import { generateInterviewFeedback, AIAnalysisResult } from '../utils/aiFeedback';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Lock } from 'lucide-react';
 import { useSaveInterview } from '../hooks/useSupabase';
 import { useAuth } from '../context/AuthContext';
+import { useBilling } from '../hooks/useBilling';
 import { 
   Trophy, 
   TrendingUp, 
@@ -53,6 +55,8 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
 }) => {
   const { user } = useAuth();
   const { saveInterview, isSaving } = useSaveInterview();
+  const { canAccessFeature, planTier } = useBilling();
+  const navigate = useNavigate();
   const [hasSaved, setHasSaved] = useState(false);
   
   const [showFullFeedback, setShowFullFeedback] = useState(false);
@@ -529,25 +533,37 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
           </div>
         </div>
 
-        {/* Metrics Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 fade-in-up" style={{ animationDelay: '0.2s' }}>
-          {metricItems.map((item) => (
-            <div key={item.key} className="glass-card p-4 text-center bg-white/50 dark:bg-zinc-900/50">
-              <div className="flex items-center justify-center gap-1 text-zinc-500 mb-2">
-                {item.icon}
-              </div>
-              <div className={`text-2xl font-bold ${getScoreColor(item.value)} mb-1`}>
-                {item.value}
-              </div>
-              <div className="text-xs text-zinc-500">{item.label}</div>
-              <div className="mt-2 h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full bg-gradient-to-r ${getScoreGradient(item.value)} transition-all duration-1000`}
-                  style={{ width: `${item.value}%` }}
-                />
-              </div>
+        {/* Metrics Grid - Gated for free users */}
+        <div className="relative">
+          {!canAccessFeature('detailed_analysis') && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm rounded-2xl">
+              <Lock className="w-8 h-8 text-zinc-400 mb-3" />
+              <p className="text-zinc-600 dark:text-zinc-400 font-medium mb-2">Detailed Analysis</p>
+              <p className="text-sm text-zinc-500 mb-4">Upgrade to see your performance breakdown</p>
+              <Button size="sm" onClick={() => navigate('/pricing')}>
+                Unlock Now
+              </Button>
             </div>
-          ))}
+          )}
+          <div className={`grid grid-cols-2 md:grid-cols-5 gap-3 fade-in-up ${!canAccessFeature('detailed_analysis') ? 'blur-sm pointer-events-none' : ''}`} style={{ animationDelay: '0.2s' }}>
+            {metricItems.map((item) => (
+              <div key={item.key} className="glass-card p-4 text-center bg-white/50 dark:bg-zinc-900/50">
+                <div className="flex items-center justify-center gap-1 text-zinc-500 mb-2">
+                  {item.icon}
+                </div>
+                <div className={`text-2xl font-bold ${getScoreColor(item.value)} mb-1`}>
+                  {item.value}
+                </div>
+                <div className="text-xs text-zinc-500">{item.label}</div>
+                <div className="mt-2 h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full bg-gradient-to-r ${getScoreGradient(item.value)} transition-all duration-1000`}
+                    style={{ width: `${item.value}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Feedback Section */}
@@ -621,15 +637,31 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 fade-in-up" style={{ animationDelay: '0.4s' }}>
-          <Button 
-            variant="outline" 
-            size="lg"
-            leftIcon={<Download className="w-5 h-5" />}
-            className="flex-1"
-            onClick={handleDownload}
-          >
-            Download Report
-          </Button>
+          {canAccessFeature('pdf_download') ? (
+            <Button 
+              variant="outline" 
+              size="lg"
+              leftIcon={<Download className="w-5 h-5" />}
+              className="flex-1"
+              onClick={handleDownload}
+            >
+              Download Report
+            </Button>
+          ) : (
+            <Button 
+              variant="outline" 
+              size="lg"
+              leftIcon={<Lock className="w-5 h-5" />}
+              className="flex-1 opacity-80"
+              onClick={() => {
+                if (window.confirm('PDF Reports are a Pro feature. Upgrade to unlock PDF downloads, detailed analysis, and more!')) {
+                  navigate('/pricing');
+                }
+              }}
+            >
+              Download Report 🔒
+            </Button>
+          )}
           <Button 
             variant="outline" 
             size="lg"

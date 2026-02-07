@@ -1,7 +1,7 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { Subscription } from '../types';
+import { Subscription, Plan, PlanTier, GatedFeature } from '../types';
 
 interface RazorpayOptions {
     key: string;
@@ -177,13 +177,53 @@ export function useBilling() {
         };
     };
 
+    // Determine plan tier from subscription
+    const planTier = useMemo((): PlanTier => {
+        if (!subscription || subscription.status !== 'active') return 'free';
+
+        const planId = subscription.plan_id?.toLowerCase() || '';
+        const planName = (subscription as any).plan_name?.toLowerCase() || planId;
+
+        // Check for one-day pass (usually has 'one_day' or 'daily' in id/name)
+        if (planId.includes('one_day') || planId.includes('daily') || planName.includes('one day')) {
+            return 'one_day';
+        }
+        // Check for yearly plans
+        if (planId.includes('yearly') || planName.includes('yearly')) {
+            return 'pro_yearly';
+        }
+        // Check for pro monthly (higher price tier)
+        if (planId.includes('pro') || planName.includes('pro')) {
+            return 'pro_monthly';
+        }
+        // Default paid plan is starter
+        return 'starter';
+    }, [subscription]);
+
+    // Feature access matrix
+    const FEATURE_ACCESS: Record<GatedFeature, PlanTier[]> = {
+        unlimited_interviews: ['one_day', 'starter', 'pro_monthly', 'pro_yearly'],
+        detailed_analysis: ['one_day', 'starter', 'pro_monthly', 'pro_yearly'],
+        pdf_download: ['one_day', 'starter', 'pro_monthly', 'pro_yearly'],
+        interview_history: ['starter', 'pro_monthly', 'pro_yearly'],
+        audio_recording: ['pro_monthly', 'pro_yearly'],
+        progress_analytics: ['pro_monthly', 'pro_yearly'],
+    };
+
+    // Check if user can access a specific feature
+    const canAccessFeature = useCallback((feature: GatedFeature): boolean => {
+        return FEATURE_ACCESS[feature]?.includes(planTier) || false;
+    }, [planTier]);
+
     return {
         subscription,
         loading,
         subscribeToPlan,
         cancelSubscription,
         checkInterviewLimit,
-        isPro: subscription?.status === 'active'
+        planTier,
+        canAccessFeature,
+        isPro: planTier !== 'free'
     };
 }
 

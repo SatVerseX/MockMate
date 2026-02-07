@@ -190,9 +190,22 @@ export interface Plan {
   id: string; // Razorpay Plan ID
   name: string;
   price: number; // in paise
-  interval: 'monthly' | 'yearly';
+  interval: 'monthly' | 'yearly' | 'daily';
+  type?: 'one_time' | 'recurring';
   features: string[];
 }
+
+// Plan Tiers for feature gating
+export type PlanTier = 'free' | 'one_day' | 'starter' | 'pro_monthly' | 'pro_yearly';
+
+// Features that can be gated
+export type GatedFeature =
+  | 'unlimited_interviews'
+  | 'detailed_analysis'
+  | 'pdf_download'
+  | 'interview_history'
+  | 'audio_recording'
+  | 'progress_analytics';
 
 // User Subscription
 export interface Subscription {

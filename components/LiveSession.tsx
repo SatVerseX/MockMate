@@ -9,6 +9,9 @@ import {
 import { Button, IconButton } from './Button';
 import { InterviewConfig, ConnectionStatus, TranscriptEntry, InterviewResult, INTERVIEW_TYPES, WARNING_THRESHOLD, LOOK_AWAY_THRESHOLD_MS, AppSettings, DEFAULT_SETTINGS } from '../types';
 import { createPcmBlob, decode, decodeAudioData, blobToBase64 } from '../utils/audioUtils';
+import { useBilling } from '../hooks/useBilling';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 
 interface LiveSessionProps {
   config: InterviewConfig;
@@ -18,6 +21,11 @@ interface LiveSessionProps {
 }
 
 export const LiveSession: React.FC<LiveSessionProps> = ({ config, settings = DEFAULT_SETTINGS, screenStream, onEndSession }) => {
+  // Billing & Auth for Pro features
+  const { canAccessFeature } = useBilling();
+  const { user } = useAuth();
+  const canRecordAudio = canAccessFeature('audio_recording');
+
   // Core State
   const [status, setStatus] = useState<ConnectionStatus>(ConnectionStatus.CONNECTING);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -62,6 +70,11 @@ export const LiveSession: React.FC<LiveSessionProps> = ({ config, settings = DEF
   const faceLandmarkerRef = useRef<FaceLandmarker | null>(null);
   const lastLookAwayTimeRef = useRef<number>(0);
 
+  // Audio Recording Refs (Pro feature)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+
   const selectedTypeInfo = INTERVIEW_TYPES.find(t => t.id === config.interviewType);
 
   // Timer - only starts after user confirms ready
@@ -104,19 +117,63 @@ export const LiveSession: React.FC<LiveSessionProps> = ({ config, settings = DEF
       faceLandmarkerRef.current.close();
       faceLandmarkerRef.current = null;
     }
+    // Stop audio recording if active
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
   }, []);
 
+  // Upload audio recording to Supabase Storage (Pro feature)
+  const uploadAudioRecording = useCallback(async (): Promise<string | null> => {
+    if (!user || audioChunksRef.current.length === 0) return null;
+    
+    try {
+      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      const fileName = `${user.id}/${Date.now()}.webm`;
+      
+      const { data, error } = await supabase.storage
+        .from('interview-recordings')
+        .upload(fileName, audioBlob, {
+          contentType: 'audio/webm',
+          cacheControl: '3600',
+        });
+      
+      if (error) {
+        console.error('Failed to upload recording:', error);
+        return null;
+      }
+      
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('interview-recordings')
+        .getPublicUrl(fileName);
+      
+      return urlData?.publicUrl || null;
+    } catch (err) {
+      console.error('Recording upload error:', err);
+      return null;
+    }
+  }, [user]);
+
   // Wrapper to finish session with data
-  const finishSession = useCallback(() => {
+  const finishSession = useCallback(async () => {
+    // Upload recording if Pro user
+    let recordingUrl: string | null = null;
+    if (canRecordAudio && audioChunksRef.current.length > 0) {
+      recordingUrl = await uploadAudioRecording();
+      setAudioUrl(recordingUrl);
+    }
+    
     cleanup();
     onEndSession({
       duration: elapsedTime,
       questionsAsked: questionCount,
       warningCount,
       transcript,
+      audioUrl: recordingUrl,
       status: isDisqualified ? 'terminated' : 'completed'
     });
-  }, [cleanup, onEndSession, elapsedTime, questionCount, warningCount, transcript, isDisqualified]);
+  }, [cleanup, onEndSession, elapsedTime, questionCount, warningCount, transcript, isDisqualified, canRecordAudio, uploadAudioRecording]);
 
   // Auto-end when time is over
   const [hasAutoEnded, setHasAutoEnded] = useState(false);
@@ -649,6 +706,27 @@ BEGIN THE INTERVIEW NOW. Greet the candidate and start with your opening questio
   const startInterview = () => {
     if (sessionRef.current && isWaitingForReady) {
       setIsWaitingForReady(false);
+      
+      // Start audio recording for Pro users
+      if (canRecordAudio && streamRef.current) {
+        try {
+          const audioStream = new MediaStream(streamRef.current.getAudioTracks());
+          const recorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm' });
+          
+          recorder.ondataavailable = (e) => {
+            if (e.data.size > 0) {
+              audioChunksRef.current.push(e.data);
+            }
+          };
+          
+          recorder.start(1000); // Collect data every second
+          mediaRecorderRef.current = recorder;
+          console.log('🎙️ Audio recording started (Pro feature)');
+        } catch (err) {
+          console.error('Failed to start audio recording:', err);
+        }
+      }
+      
       (sessionRef.current as any).send({ 
         parts: [{ text: `I am ${config.candidateName}. I am ready for the interview. Please introduce yourself and start.` }], 
         turnComplete: true 
