@@ -109,16 +109,16 @@ export const PricingScreen: React.FC = () => {
                 return [
                   'Everything in Monthly',
                   '2 Months Free',
-                  '🎙️ Interview Recordings',
-                  '📊 Progress Analytics',
+                  'Interview Recordings',
+                  'Progress Analytics',
                   'Priority Support'
                 ];
               }
               if (planName.includes('pro')) {
                 return [
                   'Unlimited AI Interviews',
-                  '🎙️ Interview Recordings',
-                  '📊 Progress Analytics',
+                  'Interview Recordings',
+                  'Progress Analytics',
                   'Detailed Analysis & PDF',
                   'Priority Support'
                 ];
