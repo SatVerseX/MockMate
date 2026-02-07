@@ -1,6 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
-// @deno-types="@types/razorpay"
-import Razorpay from 'razorpay'
+import { createClient } from 'npm:@supabase/supabase-js@2'
+import { createHmac } from 'node:crypto'
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -8,14 +7,24 @@ const corsHeaders = {
 }
 
 Deno.serve(async (req) => {
+    console.log('Verify-payment function invoked')
+
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
 
     try {
+        // Create Supabase client with user's auth token
         const supabaseClient = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '' // Use Service Role Key to bypass RLS if needed
+            Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+            { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+        )
+
+        // Also create admin client for bypassing RLS if needed
+        const supabaseAdmin = createClient(
+            Deno.env.get('SUPABASE_URL') ?? '',
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         )
 
         const {
@@ -25,82 +34,92 @@ Deno.serve(async (req) => {
             razorpay_signature
         } = await req.json()
 
+        console.log('Payment verification request:', {
+            payment_id: razorpay_payment_id,
+            order_id: razorpay_order_id,
+            subscription_id: razorpay_subscription_id
+        })
+
         if (!razorpay_payment_id || !razorpay_signature) {
             throw new Error('Missing required payment details')
         }
 
-        let isValid = false;
+        // Get user from auth token
+        const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+        console.log('User from token:', user?.id, 'Error:', userError)
 
-        // Verify Subscription
+        if (!user) {
+            throw new Error('User not authenticated')
+        }
+
+        const secret = Deno.env.get('RAZORPAY_KEY_SECRET') ?? ''
+        let isValid = false
+
+        // Verify signature based on payment type
         if (razorpay_subscription_id) {
-            const generated_signature = Razorpay.validateWebhookSignature(
-                razorpay_payment_id + '|' + razorpay_subscription_id,
-                razorpay_signature,
-                Deno.env.get('RAZORPAY_KEY_SECRET') ?? ''
-            )
-            isValid = !!generated_signature;
+            // Subscription signature: payment_id|subscription_id
+            const text = razorpay_payment_id + '|' + razorpay_subscription_id
+            const expectedSignature = createHmac('sha256', secret).update(text).digest('hex')
+            isValid = expectedSignature === razorpay_signature
+            console.log('Subscription signature validation:', isValid)
 
             if (isValid) {
-                await supabaseClient
+                const { error: updateError } = await supabaseAdmin
                     .from('subscriptions')
                     .update({
                         status: 'active',
                         razorpay_subscription_id: razorpay_subscription_id
                     })
-                    .eq('razorpay_subscription_id', razorpay_subscription_id)
+                    .eq('user_id', user.id)
+
+                if (updateError) {
+                    console.log('Update error:', updateError)
+                }
             }
-        }
-        // Verify One-Time Order
-        else if (razorpay_order_id) {
-            // Signature for Orders: hmac_sha256(order_id + "|" + payment_id, secret)
-            // Using Razorpay's utility if available, or manual check. 
-            // Note: Razorpay wrapper might not have order signature util exposed same way.
-            // Standard verification:
-            const text = razorpay_order_id + "|" + razorpay_payment_id;
-            // Using simple validation function/logic provided by Razorpay lib or manually
-            const generated_signature = Razorpay.validateWebhookSignature(
-                text,
-                razorpay_signature,
-                Deno.env.get('RAZORPAY_KEY_SECRET') ?? ''
-            )
-            isValid = !!generated_signature;
+        } else if (razorpay_order_id) {
+            // Order signature: order_id|payment_id
+            const text = razorpay_order_id + '|' + razorpay_payment_id
+            const expectedSignature = createHmac('sha256', secret).update(text).digest('hex')
+            isValid = expectedSignature === razorpay_signature
+            console.log('Order signature validation:', isValid)
 
             if (isValid) {
-                // Get the user_id that owns this subscription/order
-                const { data: { user } } = await supabaseClient.auth.getUser();
-                if (!user) throw new Error("User not found for update");
-
                 // Calculate Expiry for Day Pass (24 hours)
-                // FUTURE: We should fetch plan details to determine duration dynamically.
-                // For now, hardcoding 24 hours as this is specific for the Day Pass.
-                const expiry = new Date();
-                expiry.setHours(expiry.getHours() + 24);
+                const expiry = new Date()
+                expiry.setHours(expiry.getHours() + 24)
 
-                await supabaseClient
+                const { error: upsertError } = await supabaseAdmin
                     .from('subscriptions')
                     .upsert({
                         user_id: user.id,
                         status: 'active',
                         current_period_end: expiry.toISOString(),
-                        // We might not have a subscription ID for one-time, but we need to link it
-                        // Maybe we store order_id somewhere or just rely on user_id
-                        plan_id: 'plan_day_pass_20' // Or fetch dynamically if stored in metadata
-                    })
+                        plan_id: 'plan_oneday_1770475519459' // Day pass plan
+                    }, { onConflict: 'user_id' })
+
+                if (upsertError) {
+                    console.log('Upsert error:', upsertError)
+                    throw new Error(`Failed to update subscription: ${upsertError.message}`)
+                }
+                console.log('Day pass activated until:', expiry.toISOString())
             }
         }
 
         if (!isValid) {
-            throw new Error('Invalid signature')
+            console.log('Signature validation failed')
+            throw new Error('Invalid payment signature')
         }
 
+        console.log('Payment verified successfully!')
         return new Response(
             JSON.stringify({ success: true, message: "Payment verified and activated." }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
 
-    } catch (error) {
+    } catch (error: any) {
+        console.log('Verification error:', error)
         return new Response(
-            JSON.stringify({ error: (error as Error).message }),
+            JSON.stringify({ error: error.message || 'Unknown error' }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
         )
     }

@@ -19,10 +19,25 @@ declare global {
     }
 }
 
+export interface ToastState {
+    isVisible: boolean;
+    message: string;
+    type: 'success' | 'error';
+}
+
 export function useBilling() {
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [subscription, setSubscription] = useState<Subscription | null>(null);
+    const [toast, setToast] = useState<ToastState>({ isVisible: false, message: '', type: 'success' });
+
+    const showToast = (message: string, type: 'success' | 'error') => {
+        setToast({ isVisible: true, message, type });
+    };
+
+    const hideToast = () => {
+        setToast(prev => ({ ...prev, isVisible: false }));
+    };
 
     // Fetch Subscription Status
     const fetchSubscription = useCallback(async () => {
@@ -134,7 +149,7 @@ export function useBilling() {
 
         } catch (err: any) {
             console.error("Subscription Error:", err);
-            alert("Failed to start payment: " + err.message);
+            showToast("Failed to start payment: " + err.message, 'error');
         } finally {
             setLoading(false);
         }
@@ -150,10 +165,10 @@ export function useBilling() {
             if (error) throw error;
             // Refresh Status
             await fetchSubscription();
-            alert("Upgrade Successful! You are now Pro.");
+            showToast("You're now Pro! Enjoy unlimited access 🎉", 'success');
         } catch (err) {
             console.error("Verification failed:", err);
-            alert("Payment verification failed. Please contact support.");
+            showToast("Payment verification failed. Please contact support.", 'error');
         } finally {
             setLoading(false);
         }
@@ -247,7 +262,9 @@ export function useBilling() {
         checkInterviewLimit,
         planTier,
         canAccessFeature,
-        isPro: planTier !== 'free'
+        isPro: planTier !== 'free',
+        toast,
+        hideToast
     };
 }
 

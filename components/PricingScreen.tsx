@@ -4,11 +4,12 @@ import { supabase } from '../lib/supabase';
 import { useBilling } from '../hooks/useBilling';
 import { Button } from './Button';
 import { Plan } from '../types';
+import { Toast } from './Toast';
 
 export const PricingScreen: React.FC = () => {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
-  const { subscribeToPlan, loading: processing, subscription, isPro } = useBilling();
+  const { subscribeToPlan, loading: processing, subscription, isPro, toast, hideToast } = useBilling();
 
   useEffect(() => {
     async function loadPlans() {
@@ -207,6 +208,14 @@ export const PricingScreen: React.FC = () => {
             </div>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      <Toast 
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={hideToast}
+      />
     </div>
   );
 };

@@ -66,12 +66,49 @@ Deno.serve(async (req) => {
         if (!plan) throw new Error('Plan not found')
         console.log('Plan found:', plan.name, 'Type:', plan.type)
 
+        // 4. Branch Logic: One-Time vs Recurring
+        // For one-time payments, we don't need a customer - just create an order directly
+        if (plan.type === 'one_time') {
+            console.log('Creating one-time order (no customer needed)...')
+            try {
+                const order = await razorpay.orders.create({
+                    amount: plan.price, // Amount in paise
+                    currency: 'INR',
+                    receipt: `rcpt_${user.id.slice(0, 8)}_${Date.now()}`,
+                    notes: {
+                        supabase_user_id: user.id,
+                        plan_id: planId,
+                        user_email: user.email
+                    }
+                })
+                console.log('Order created:', order.id)
+
+                return new Response(
+                    JSON.stringify({
+                        orderId: order.id,
+                        amount: plan.price,
+                        currency: 'INR',
+                        keyId: Deno.env.get('RAZORPAY_KEY_ID'),
+                        type: 'one_time'
+                    }),
+                    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                )
+            } catch (orderError: any) {
+                console.log('Order creation error:', JSON.stringify(orderError, null, 2))
+                const errorMessage = orderError?.error?.description || orderError?.message || JSON.stringify(orderError)
+                throw new Error(`Failed to create order: ${errorMessage}`)
+            }
+        }
+
+        // For recurring subscriptions, we need a customer
+        console.log('Processing recurring subscription...')
+
         // 2. Get/Create User's Subscription Record (for customer ID)
         let { data: subscription, error: subError } = await supabaseClient
             .from('subscriptions')
             .select('*')
             .eq('user_id', user.id)
-            .maybeSingle() // Use maybeSingle instead of single to avoid error when no subscription exists
+            .maybeSingle()
 
         if (subError) {
             console.log('Subscription fetch error:', subError)
@@ -80,7 +117,7 @@ Deno.serve(async (req) => {
 
         let razorpayCustomerId = subscription?.razorpay_customer_id
 
-        // 3. Create Razorpay Customer if needed
+        // 3. Create Razorpay Customer if needed (only for recurring)
         if (!razorpayCustomerId) {
             console.log('Creating new Razorpay customer...')
             try {
@@ -103,69 +140,43 @@ Deno.serve(async (req) => {
                     throw new Error(`Failed to save customer: ${upsertError.message}`)
                 }
             } catch (customerError: any) {
-                console.log('Customer creation error:', customerError)
-                throw new Error(`Failed to create customer: ${customerError.message || customerError}`)
+                console.log('Customer creation error:', JSON.stringify(customerError, null, 2))
+                const errorMessage = customerError?.error?.description || customerError?.message || JSON.stringify(customerError)
+                throw new Error(`Failed to create customer: ${errorMessage}`)
             }
         }
 
-        // 4. Branch Logic: One-Time vs Recurring
-        if (plan.type === 'one_time') {
-            console.log('Creating one-time order...')
-            // Create Razorpay Order
-            const order = await razorpay.orders.create({
-                amount: plan.price, // Amount in paise
-                currency: 'INR',
-                receipt: user.id.slice(0, 10), // Shorten ID for receipt
-                notes: {
-                    supabase_user_id: user.id,
-                    plan_id: planId
-                }
-            })
-            console.log('Order created:', order.id)
-
-            return new Response(
-                JSON.stringify({
-                    orderId: order.id,
-                    amount: plan.price,
-                    currency: 'INR',
-                    keyId: Deno.env.get('RAZORPAY_KEY_ID'),
-                    type: 'one_time'
-                }),
-                { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
-        } else {
-            console.log('Creating recurring subscription...')
-            // Create Subscription
-            const sub = await razorpay.subscriptions.create({
-                plan_id: planId,
-                customer_id: razorpayCustomerId,
-                total_count: 120,
-                quantity: 1,
-                notes: {
-                    supabase_user_id: user.id
-                }
-            })
-            console.log('Subscription created:', sub.id)
-
-            // Update DB
-            const { error: updateError } = await supabaseClient
-                .from('subscriptions')
-                .update({ razorpay_subscription_id: sub.id, plan_id: planId })
-                .eq('user_id', user.id)
-
-            if (updateError) {
-                console.log('Update error:', updateError)
+        // Create Subscription for recurring plans
+        console.log('Creating recurring subscription...')
+        const sub = await razorpay.subscriptions.create({
+            plan_id: planId,
+            customer_id: razorpayCustomerId,
+            total_count: 120,
+            quantity: 1,
+            notes: {
+                supabase_user_id: user.id
             }
+        })
+        console.log('Subscription created:', sub.id)
 
-            return new Response(
-                JSON.stringify({
-                    subscriptionId: sub.id,
-                    keyId: Deno.env.get('RAZORPAY_KEY_ID'),
-                    type: 'recurring'
-                }),
-                { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
+        // Update DB
+        const { error: updateError } = await supabaseClient
+            .from('subscriptions')
+            .update({ razorpay_subscription_id: sub.id, plan_id: planId })
+            .eq('user_id', user.id)
+
+        if (updateError) {
+            console.log('Update error:', updateError)
         }
+
+        return new Response(
+            JSON.stringify({
+                subscriptionId: sub.id,
+                keyId: Deno.env.get('RAZORPAY_KEY_ID'),
+                type: 'recurring'
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
 
     } catch (error: any) {
         console.log('Error in create-subscription:', error)
