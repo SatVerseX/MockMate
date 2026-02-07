@@ -10,6 +10,7 @@ import { LiveSession } from './components/LiveSession';
 import { ResultsScreen } from './components/ResultsScreen';
 import { HistoryScreen } from './components/HistoryScreen';
 import { SettingsScreen } from './components/SettingsScreen';
+import { ProfileScreen } from './components/ProfileScreen';
 import { AuthScreen } from './components/AuthScreen';
 import { GuidePage } from './components/GuidePage';
 import { PricingScreen } from './components/PricingScreen';
@@ -265,6 +266,15 @@ const AppContent: React.FC = () => {
                 settings={settings}
                 onSave={handleSaveSettings}
               />
+            } 
+          />
+          
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <ProfileScreen onBack={() => navigate('/dashboard')} />
+              </ProtectedRoute>
             } 
           />
           
