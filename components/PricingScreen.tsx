@@ -19,7 +19,12 @@ export const PricingScreen: React.FC = () => {
             .order('price', { ascending: true });
         
         if (error) throw error;
-        setPlans(data as Plan[]);
+        
+        // Deduplicate plans by name (keep first occurrence)
+        const uniquePlans = (data as Plan[]).filter(
+          (plan, index, self) => self.findIndex(p => p.name === plan.name) === index
+        );
+        setPlans(uniquePlans);
       } catch (err) {
         console.error("Failed to load plans", err);
       } finally {
