@@ -165,9 +165,16 @@ export const PricingScreen: React.FC = () => {
 
   // Confirm payment after phone entry
   const confirmPayment = async (phone: string) => {
-    if (!selectedPlanId) return;
+    console.log('confirmPayment called with phone:', phone);
+    console.log('selectedPlanId:', selectedPlanId);
+    
+    if (!selectedPlanId) {
+      console.error('No plan selected!');
+      return;
+    }
     
     try {
+      console.log('Saving phone to user metadata...');
       // Save phone to user metadata
       const { error } = await supabase.auth.updateUser({
         data: { phone }
@@ -175,13 +182,19 @@ export const PricingScreen: React.FC = () => {
       
       if (error) {
         console.error('Failed to save phone:', error);
+        // Continue anyway - phone saving is not critical
+      } else {
+        console.log('Phone saved successfully');
       }
       
       // Close modal and proceed with payment
+      console.log('Closing modal and calling subscribeToPlan...');
       setShowPhoneModal(false);
       await subscribeToPlan(selectedPlanId);
+      console.log('subscribeToPlan completed');
     } catch (err) {
       console.error('Payment error:', err);
+      setShowPhoneModal(false); // Close modal on error too
     }
   };
 
