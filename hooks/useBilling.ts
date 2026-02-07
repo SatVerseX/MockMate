@@ -69,13 +69,18 @@ export function useBilling() {
             if (!isLoaded) throw new Error("Failed to load Razorpay SDK");
 
             // 1. Create Subscription on Backend
-            const response = await supabase.functions.invoke('create-subscription', {
+            const { data, error } = await supabase.functions.invoke('create-subscription', {
                 body: { planId }
             });
 
-            if (!response.data) throw new Error("Failed to initiate subscription");
+            if (error) {
+                console.error("Function Error:", error);
+                throw new Error(error.message || "Failed to initiate subscription");
+            }
 
-            const { subscriptionId, orderId, keyId, amount, currency, type } = response.data;
+            if (!data) throw new Error("No data returned from backend");
+
+            const { subscriptionId, orderId, keyId, amount, currency, type } = data;
 
             if (!keyId) throw new Error("Payment configuration missing");
 
@@ -111,7 +116,9 @@ export function useBilling() {
 
         } catch (err: any) {
             console.error("Subscription Error:", err);
-            alert("Failed to start payment: " + err.message);
+            // Try to parse error body if available
+            const errorMsg = err.message || JSON.stringify(err);
+            alert("Failed to start payment: " + errorMsg);
         } finally {
             setLoading(false);
         }

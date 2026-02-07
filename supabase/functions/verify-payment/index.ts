@@ -13,9 +13,20 @@ Deno.serve(async (req) => {
     }
 
     try {
+        const RAZORPAY_KEY_SECRET = Deno.env.get('RAZORPAY_KEY_SECRET') ?? '';
+        if (!RAZORPAY_KEY_SECRET) throw new Error("Missing Razorpay Secret");
+
+        // Client for Auth (identifying user)
         const supabaseClient = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '' // Use Service Role Key to bypass RLS if needed
+            Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+            { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+        )
+
+        // Admin for DB Updates (bypassing RLS)
+        const supabaseAdmin = createClient(
+            Deno.env.get('SUPABASE_URL') ?? '',
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         )
 
         const {
@@ -36,12 +47,12 @@ Deno.serve(async (req) => {
             const generated_signature = Razorpay.validateWebhookSignature(
                 razorpay_payment_id + '|' + razorpay_subscription_id,
                 razorpay_signature,
-                Deno.env.get('RAZORPAY_KEY_SECRET') ?? ''
+                RAZORPAY_KEY_SECRET
             )
             isValid = !!generated_signature;
 
             if (isValid) {
-                await supabaseClient
+                await supabaseAdmin
                     .from('subscriptions')
                     .update({
                         status: 'active',
@@ -52,16 +63,11 @@ Deno.serve(async (req) => {
         }
         // Verify One-Time Order
         else if (razorpay_order_id) {
-            // Signature for Orders: hmac_sha256(order_id + "|" + payment_id, secret)
-            // Using Razorpay's utility if available, or manual check. 
-            // Note: Razorpay wrapper might not have order signature util exposed same way.
-            // Standard verification:
             const text = razorpay_order_id + "|" + razorpay_payment_id;
-            // Using simple validation function/logic provided by Razorpay lib or manually
             const generated_signature = Razorpay.validateWebhookSignature(
                 text,
                 razorpay_signature,
-                Deno.env.get('RAZORPAY_KEY_SECRET') ?? ''
+                RAZORPAY_KEY_SECRET
             )
             isValid = !!generated_signature;
 
@@ -71,20 +77,16 @@ Deno.serve(async (req) => {
                 if (!user) throw new Error("User not found for update");
 
                 // Calculate Expiry for Day Pass (24 hours)
-                // FUTURE: We should fetch plan details to determine duration dynamically.
-                // For now, hardcoding 24 hours as this is specific for the Day Pass.
                 const expiry = new Date();
                 expiry.setHours(expiry.getHours() + 24);
 
-                await supabaseClient
+                await supabaseAdmin
                     .from('subscriptions')
                     .upsert({
                         user_id: user.id,
                         status: 'active',
                         current_period_end: expiry.toISOString(),
-                        // We might not have a subscription ID for one-time, but we need to link it
-                        // Maybe we store order_id somewhere or just rely on user_id
-                        plan_id: 'plan_day_pass_20' // Or fetch dynamically if stored in metadata
+                        plan_id: 'plan_day_pass_20'
                     })
             }
         }

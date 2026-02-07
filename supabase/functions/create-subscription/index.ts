@@ -3,9 +3,16 @@ import { createClient } from '@supabase/supabase-js'
 // @deno-types="https://esm.sh/@types/razorpay@2.4.1"
 import Razorpay from 'razorpay'
 
+const RAZORPAY_KEY_ID = Deno.env.get('RAZORPAY_KEY_ID') ?? '';
+const RAZORPAY_KEY_SECRET = Deno.env.get('RAZORPAY_KEY_SECRET') ?? '';
+
+if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+    console.error("Missing Razorpay Keys");
+}
+
 const razorpay = new Razorpay({
-    key_id: Deno.env.get('RAZORPAY_KEY_ID') ?? '',
-    key_secret: Deno.env.get('RAZORPAY_KEY_SECRET') ?? '',
+    key_id: RAZORPAY_KEY_ID,
+    key_secret: RAZORPAY_KEY_SECRET,
 })
 
 const corsHeaders = {
@@ -122,8 +129,12 @@ Deno.serve(async (req) => {
         }
 
     } catch (error) {
+        console.error("Create Subscription Error:", error);
         return new Response(
-            JSON.stringify({ error: (error as Error).message }),
+            JSON.stringify({
+                error: (error as Error).message,
+                details: error
+            }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
         )
     }
