@@ -68,6 +68,18 @@ export function useBilling() {
             const isLoaded = await loadRazorpayScript();
             if (!isLoaded) throw new Error("Failed to load Razorpay SDK");
 
+            // Verify session is valid before calling edge function
+            const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+            console.log("Session check:", {
+                hasSession: !!sessionData?.session,
+                hasAccessToken: !!sessionData?.session?.access_token,
+                error: sessionError
+            });
+
+            if (!sessionData?.session) {
+                throw new Error("No active session. Please log in again.");
+            }
+
             // 1. Create Subscription on Backend
             const response = await supabase.functions.invoke('create-subscription', {
                 body: { planId }
