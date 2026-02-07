@@ -266,7 +266,7 @@ export function useInterview(interviewId: string | null) {
         };
 
         fetchInterview();
-    }, [user, interviewId]);
+    }, [user?.id, interviewId]);
 
     return { interview, isLoading, error };
 }

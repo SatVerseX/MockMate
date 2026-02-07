@@ -80,7 +80,7 @@ const AppContent: React.FC = () => {
     } else {
       navigate('/login');
     }
-  }, [navigate, user]);
+  }, [navigate, user?.id]);
 
   const handleStartNewInterview = useCallback(() => {
     navigate('/setup');

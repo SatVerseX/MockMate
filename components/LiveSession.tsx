@@ -153,7 +153,7 @@ export const LiveSession: React.FC<LiveSessionProps> = ({ config, settings = DEF
       console.error('Recording upload error:', err);
       return null;
     }
-  }, [user]);
+  }, [user?.id]);
 
   // Wrapper to finish session with data
   const finishSession = useCallback(async () => {
