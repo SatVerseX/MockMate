@@ -54,14 +54,14 @@ export const PricingScreen: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
           
           {/* Free Plan */}
-          <div className="bg-white dark:bg-zinc-900/50 backdrop-blur-xl border border-zinc-200 dark:border-white/10 rounded-3xl p-8 shadow-xl transition-transform hover:-translate-y-2 relative group">
+          <div className="bg-white dark:bg-zinc-900/50 backdrop-blur-xl border border-zinc-200 dark:border-white/10 rounded-3xl p-8 shadow-xl transition-transform hover:-translate-y-2 relative group flex flex-col">
             <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Free Starter</h3>
             <div className="flex items-baseline gap-1 mb-6">
               <span className="text-4xl font-bold text-zinc-900 dark:text-white">₹0</span>
-              <span className="text-zinc-500 dark:text-zinc-400">/mongth</span>
+              <span className="text-zinc-500 dark:text-zinc-400">/month</span>
             </div>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8">
               Perfect for getting started and trying out the AI interviewer.
@@ -76,20 +76,24 @@ export const PricingScreen: React.FC = () => {
               ))}
             </div>
 
-            <Button variant="secondary" fullWidth disabled>
-              {isPro ? "Included" : "Current Plan"}
-            </Button>
+            <div className="mt-auto">
+              <Button variant="secondary" fullWidth disabled>
+                {isPro ? "Included" : "Current Plan"}
+              </Button>
+            </div>
           </div>
 
-          {/* Paid Plans from DB */}
-          {plans.map((plan) => {
+          {/* Paid Plans from DB - filter out any free/starter plans to avoid duplication */}
+          {plans
+            .filter((plan) => plan.price > 0) // Only show paid plans, free is hardcoded above
+            .map((plan) => {
             const isCurrentPlan = subscription?.plan_id === plan.id;
 
             return (
               <div 
                 key={plan.id}
                 className={`
-                   relative bg-white dark:bg-zinc-900/80 backdrop-blur-xl border-2 rounded-3xl p-8 shadow-2xl transition-all hover:shadow-emerald-500/20 hover:-translate-y-2
+                   relative bg-white dark:bg-zinc-900/80 backdrop-blur-xl border-2 rounded-3xl p-8 shadow-2xl transition-all hover:shadow-emerald-500/20 hover:-translate-y-2 flex flex-col
                    ${isCurrentPlan ? 'border-emerald-500' : 'border-zinc-200 dark:border-zinc-800'}
                 `}
               >
@@ -123,25 +127,27 @@ export const PricingScreen: React.FC = () => {
                   ))}
                 </div>
 
-                <Button 
-                  onClick={() => !isCurrentPlan && subscribeToPlan(plan.id)}
-                  variant={isCurrentPlan ?  "secondary" : "primary"}
-                  fullWidth
-                  disabled={processing || isCurrentPlan}
-                  className={!isCurrentPlan ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/25" : ""}
-                >
-                  {processing ? (
-                      <span className="flex items-center gap-2">
-                          <Loader2 className="w-4 h-4 animate-spin" /> Processing...
-                      </span>
-                  ) : isCurrentPlan ? (
-                      <span className="flex items-center gap-2">
-                          <ShieldCheck className="w-4 h-4" /> Active
-                      </span>
-                  ) : (
-                      "Upgrade to Pro"
-                  )}
-                </Button>
+                <div className="mt-auto">
+                  <Button 
+                    onClick={() => !isCurrentPlan && subscribeToPlan(plan.id)}
+                    variant={isCurrentPlan ?  "secondary" : "primary"}
+                    fullWidth
+                    disabled={processing || isCurrentPlan}
+                    className={!isCurrentPlan ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/25" : ""}
+                  >
+                    {processing ? (
+                        <span className="flex items-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" /> Processing...
+                        </span>
+                    ) : isCurrentPlan ? (
+                        <span className="flex items-center gap-2">
+                            <ShieldCheck className="w-4 h-4" /> Active
+                        </span>
+                    ) : (
+                        "Upgrade to Pro"
+                    )}
+                  </Button>
+                </div>
               </div>
             );
           })} 
