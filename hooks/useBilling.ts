@@ -38,7 +38,8 @@ export function useBilling() {
         } else {
             setSubscription(null); // Explicitly set to null if no subscription
         }
-    }, [user]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.id]); // Use user.id instead of user object
 
     useEffect(() => {
         fetchSubscription();
