@@ -93,6 +93,46 @@ export const PricingScreen: React.FC = () => {
             .filter((plan) => plan.price > 0) // Only show paid plans, free is hardcoded above
             .map((plan) => {
             const isCurrentPlan = subscription?.plan_id === plan.id;
+            
+            // Feature mapping based on plan type
+            const planName = plan.name?.toLowerCase() || '';
+            const getFeatures = (): string[] => {
+              if (planName.includes('one day') || planName.includes('daily')) {
+                return [
+                  '24-Hour Unlimited Access',
+                  'Detailed Analysis',
+                  'PDF Reports',
+                  'No Subscription Needed'
+                ];
+              }
+              if (planName.includes('pro') && plan.interval === 'yearly') {
+                return [
+                  'Everything in Monthly',
+                  '2 Months Free',
+                  '🎙️ Interview Recordings',
+                  '📊 Progress Analytics',
+                  'Priority Support'
+                ];
+              }
+              if (planName.includes('pro')) {
+                return [
+                  'Unlimited AI Interviews',
+                  '🎙️ Interview Recordings',
+                  '📊 Progress Analytics',
+                  'Detailed Analysis & PDF',
+                  'Priority Support'
+                ];
+              }
+              // Starter plan
+              return [
+                'Unlimited AI Interviews',
+                'Detailed Analysis',
+                'PDF Reports',
+                '30-Day History',
+                'Standard Support'
+              ];
+            };
+            const displayFeatures = getFeatures();
 
             return (
               <div 
@@ -122,7 +162,7 @@ export const PricingScreen: React.FC = () => {
                 </p>
 
                 <div className="space-y-4 mb-8">
-                  {(plan.features as string[]).map((feat, i) => (
+                  {displayFeatures.map((feat, i) => (
                     <div key={i} className="flex items-center gap-3 text-zinc-700 dark:text-zinc-300">
                       <div className="p-1 rounded-full bg-emerald-500/10">
                         <Zap className="w-3 h-3 text-emerald-500" />
