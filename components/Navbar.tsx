@@ -127,30 +127,47 @@ export const Navbar: React.FC<NavbarProps> = ({
                         className="fixed inset-0 z-40" 
                         onClick={() => setShowUserMenu(false)} 
                       />
-                      <div className="absolute right-0 top-12 z-50 w-64 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-xl overflow-hidden">
-                        <div className="p-4 border-b border-zinc-100 dark:border-zinc-800">
-                          <p className="font-medium text-zinc-900 dark:text-white truncate">
-                            {profile?.fullName || 'User'}
-                          </p>
-                          <p className="text-sm text-zinc-500 truncate">
-                            {user.email}
-                          </p>
+                      <div className="absolute right-0 top-14 z-50 w-72 glass-card bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border border-zinc-200/50 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden fade-in-up origin-top-right ring-1 ring-black/5">
+                        <div className="p-4 border-b border-zinc-100/50 dark:border-white/5 bg-zinc-50/50 dark:bg-white/5">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-bold shadow-lg shadow-emerald-500/20">
+                              {profile?.fullName?.charAt(0).toUpperCase() || user.email?.charAt(0)?.toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-zinc-900 dark:text-white truncate">
+                                {profile?.fullName || 'User'}
+                              </p>
+                              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate font-medium">
+                                {user.email}
+                              </p>
+                            </div>
+                          </div>
+                          {profile?.fullName && (
+                            <div className="flex items-center gap-1.5 mt-2">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300">
+                                <Crown className="w-3 h-3 mr-1" />
+                                {profile.isPro ? 'Pro Member' : 'Free Plan'}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                        <div className="p-2">
+                        <div className="p-2 space-y-1">
                           <Link
                             to="/profile"
                             onClick={() => setShowUserMenu(false)}
-                            className="w-full flex items-center gap-3 px-3 py-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 hover:text-emerald-700 dark:hover:text-emerald-400 rounded-xl transition-all group"
                           >
-                            <User className="w-4 h-4" />
-                            <span>Profile</span>
+                            <User className="w-4 h-4 text-zinc-400 group-hover:text-emerald-500 transition-colors" />
+                            <span className="font-medium">Profile Settings</span>
                           </Link>
+                          {/* Separator */}
+                          <div className="h-px bg-zinc-100 dark:bg-white/5 my-1 mx-2" />
                           <button
                             onClick={handleSignOut}
-                            className="w-full flex items-center gap-3 px-3 py-2 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all group"
                           >
-                            <LogOut className="w-4 h-4" />
-                            <span>Sign Out</span>
+                            <LogOut className="w-4 h-4 text-red-400 group-hover:text-red-500 transition-colors" />
+                            <span className="font-medium">Sign Out</span>
                           </button>
                         </div>
                       </div>

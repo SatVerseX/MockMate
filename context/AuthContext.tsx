@@ -8,6 +8,7 @@ interface UserProfile {
   email: string;
   fullName: string | null;
   avatarUrl: string | null;
+  isPro?: boolean;
 }
 
 interface AuthContextType {
@@ -45,34 +46,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Fetch user profile
   const fetchProfile = async (userId: string, userEmail: string) => {
     try {
-      const { data, error } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
+      
+      const { data: subData } = await supabase
+        .from('subscriptions')
+        .select('status, plan_id')
+        .eq('user_id', userId)
+        .in('status', ['active', 'trialing'])
+        .single();
 
-      if (error) {
-        console.error('Error fetching profile:', error);
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
         // Create a basic profile if none exists
         setProfile({
           id: userId,
           email: userEmail,
           fullName: null,
           avatarUrl: null,
+          isPro: false
         });
         return;
       }
 
       setProfile({
-        id: data.id,
+        id: profileData.id,
         email: userEmail,
-        fullName: data.full_name,
-        avatarUrl: data.avatar_url,
+        fullName: profileData.full_name,
+        avatarUrl: profileData.avatar_url,
+        isPro: !!subData
       });
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
   };
+
+
 
   // Initialize auth state
   useEffect(() => {
