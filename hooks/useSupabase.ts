@@ -104,7 +104,8 @@ export function useInterviews() {
         } finally {
             setIsLoading(false);
         }
-    }, [user]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.id]); // Use user.id instead of user object to prevent re-fetch on auth refresh
 
     useEffect(() => {
         fetchInterviews();
