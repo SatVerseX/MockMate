@@ -2,23 +2,35 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import Razorpay from 'npm:razorpay@2.9.4'
 
-const razorpay = new Razorpay({
-    key_id: Deno.env.get('RAZORPAY_KEY_ID') ?? '',
-    key_secret: Deno.env.get('RAZORPAY_KEY_SECRET') ?? '',
-})
-
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
 Deno.serve(async (req) => {
+    console.log('Function invoked - method:', req.method)
+
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
 
     try {
         console.log('Starting create-subscription function')
+
+        // Initialize Razorpay inside handler to catch any init errors
+        const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID')
+        const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET')
+        console.log('Razorpay Key ID present:', !!razorpayKeyId)
+        console.log('Razorpay Key Secret present:', !!razorpayKeySecret)
+
+        if (!razorpayKeyId || !razorpayKeySecret) {
+            throw new Error('Razorpay credentials not configured')
+        }
+
+        const razorpay = new Razorpay({
+            key_id: razorpayKeyId,
+            key_secret: razorpayKeySecret,
+        })
 
         const supabaseClient = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
