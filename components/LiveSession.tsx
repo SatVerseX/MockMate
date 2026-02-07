@@ -867,12 +867,19 @@ BEGIN THE INTERVIEW NOW. Greet the candidate and start with your opening questio
   }
 
   return (
-    <div ref={containerRef} className="flex h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white overflow-hidden relative transition-colors duration-300">
+    <div ref={containerRef} className="flex h-screen bg-zinc-950 text-white overflow-hidden relative transition-colors duration-300 font-sans">
       
+      {/* Ambient Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-[20%] -left-[10%] w-[70vw] h-[70vw] bg-emerald-900/10 rounded-full blur-[120px] opacity-30 animate-pulse" style={{ animationDuration: '10s' }} />
+        <div className="absolute -bottom-[20%] -right-[10%] w-[70vw] h-[70vw] bg-blue-900/10 rounded-full blur-[120px] opacity-30 animate-pulse" style={{ animationDelay: '5s', animationDuration: '12s' }} />
+      </div>
+
       {/* Fullscreen Enforcer Overlay */}
       {!isFullscreen && !isDisqualified && (
-        <div className="absolute inset-0 z-[60] bg-zinc-900/60 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center transition-all duration-500">
-          <div className="glass-card-elevated p-10 max-w-md border border-white/10 shadow-2xl relative overflow-hidden group">
+        <div className="absolute inset-0 z-[60] bg-black/80 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center transition-all duration-500">
+           {/* ... existing code for fullscreen overlay ... */}
+           <div className="glass-card-elevated p-10 max-w-md border border-white/10 shadow-2xl relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
             
             <div className="relative z-10">
@@ -894,7 +901,7 @@ BEGIN THE INTERVIEW NOW. Greet the candidate and start with your opening questio
       {/* Warning Toast */}
       {lastWarning && (
         <div className="absolute top-24 left-1/2 -translate-x-1/2 z-[70] animate-in slide-in-from-top-4 fade-in duration-300">
-          <div className="bg-red-500/10 backdrop-blur-xl border border-red-500/30 text-red-200 pl-4 pr-5 py-3 rounded-full flex items-center gap-3 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+          <div className="bg-red-500/10 backdrop-blur-xl border border-red-500/20 text-red-200 pl-4 pr-5 py-3 rounded-full flex items-center gap-3 shadow-[0_0_30px_rgba(239,68,68,0.2)] ring-1 ring-red-500/20">
             <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center">
               <AlertTriangle size={16} className="text-red-400" />
             </div>
@@ -909,14 +916,15 @@ BEGIN THE INTERVIEW NOW. Greet the candidate and start with your opening questio
 
       {/* Ready to Start Overlay */}
       {isWaitingForReady && status === ConnectionStatus.CONNECTED && (
-        <div className="absolute inset-0 z-[75] bg-white/80 dark:bg-zinc-900/60 backdrop-blur-2xl flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-700">
-          {/* Ambient Glow */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/10 dark:bg-indigo-500/20 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute inset-0 z-[75] bg-black/70 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-700">
+          {/* ... existing code ... */}
+           {/* Ambient Glow */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
           
-          <div className="glass-card-elevated p-12 max-w-lg w-full bg-white dark:bg-transparent border border-zinc-200 dark:border-white/10 shadow-2xl relative overflow-hidden">
+          <div className="glass-card-elevated p-12 max-w-lg w-full bg-zinc-900/80 border border-white/10 shadow-2xl relative overflow-hidden backdrop-blur-2xl rounded-3xl">
             {/* Decorative Pulse Rings */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] border border-emerald-500/20 dark:border-white/5 rounded-full animate-ping opacity-20 pointer-events-none" style={{ animationDuration: '3s' }} />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] border border-emerald-500/10 dark:border-white/5 rounded-full animate-ping opacity-10 pointer-events-none" style={{ animationDuration: '3s', animationDelay: '1s' }} />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] border border-emerald-500/20 rounded-full animate-ping opacity-20 pointer-events-none" style={{ animationDuration: '3s' }} />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] border border-emerald-500/10 rounded-full animate-ping opacity-10 pointer-events-none" style={{ animationDuration: '3s', animationDelay: '1s' }} />
 
             <div className="relative z-10 flex flex-col items-center">
               <div className="relative mb-8">
@@ -930,15 +938,15 @@ BEGIN THE INTERVIEW NOW. Greet the candidate and start with your opening questio
                 </div>
               </div>
               
-              <h3 className="text-3xl font-bold text-zinc-900 dark:text-white mb-4 tracking-tight">Ready to Begin?</h3>
+              <h3 className="text-3xl font-bold text-white mb-4 tracking-tight">Ready to Begin?</h3>
               
-              <p className="text-zinc-500 dark:text-zinc-400 mb-8 leading-relaxed max-w-sm">
+              <p className="text-zinc-400 mb-8 leading-relaxed max-w-sm">
                 Ensure you're in a quiet environment. When you're ready, speak the phrase below.
               </p>
               
-              <div className="bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl px-6 py-4 mb-8 w-full max-w-sm">
-                <p className="text-sm text-zinc-500 uppercase tracking-wider font-semibold mb-2">Say this phrase</p>
-                <p className="text-lg text-zinc-900 dark:text-white font-medium">"I am ready to start the interview"</p>
+              <div className="bg-white/5 border border-white/10 rounded-xl px-6 py-4 mb-8 w-full max-w-sm">
+                <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-2">Say this phrase</p>
+                <p className="text-lg text-white font-medium">"I am ready to start the interview"</p>
               </div>
               
               <div className="flex flex-col gap-4 w-full max-w-xs">
@@ -959,8 +967,9 @@ BEGIN THE INTERVIEW NOW. Greet the candidate and start with your opening questio
 
       {/* Interview Ending Overlay */}
       {hasAutoEnded && (
-        <div className="absolute inset-0 z-[80] bg-zinc-900/80 backdrop-blur-2xl flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-700">
-           <div className="glass-card-elevated p-12 max-w-md w-full border border-white/10 shadow-2xl relative overflow-hidden">
+        <div className="absolute inset-0 z-[80] bg-black/80 backdrop-blur-2xl flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-700">
+           {/* ... existing code ... */}
+           <div className="glass-card-elevated p-12 max-w-md w-full border border-white/10 shadow-2xl relative overflow-hidden bg-zinc-900/90 rounded-3xl">
              <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent pointer-events-none" />
              
              {isTimeOver ? (
@@ -994,60 +1003,57 @@ BEGIN THE INTERVIEW NOW. Greet the candidate and start with your opening questio
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col relative z-10 text-zinc-100">
         
         {/* Top Bar */}
-        <header className="absolute top-0 left-0 right-0 z-20 p-6 flex justify-between items-start pointer-events-none">
-          <div>
-            <h2 className="text-sm font-semibold tracking-wide flex items-center gap-2 drop-shadow-md">
-              <span className={`w-2 h-2 rounded-full ${status === ConnectionStatus.CONNECTED ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-amber-500'}`}></span>
-              {status === ConnectionStatus.CONNECTED ? 'Live Interview' : 'Connecting...'}
-            </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 font-mono uppercase opacity-80">
-              {selectedTypeInfo?.title} • {config.jobRole}
-            </p>
+        <header className="absolute top-6 left-6 right-6 z-20 flex justify-between items-start pointer-events-none">
+          <div className="bg-black/40 backdrop-blur-xl border border-white/10 px-4 py-3 rounded-2xl shadow-lg pointer-events-auto flex items-center gap-4">
+             <div className="flex items-center gap-3">
+                <div className={`w-2.5 h-2.5 rounded-full ${status === ConnectionStatus.CONNECTED ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-amber-500 animate-pulse'}`}></div>
+                <div>
+                   <h2 className="text-sm font-bold text-white leading-none">Live Interview</h2>
+                   <p className="text-[10px] text-zinc-400 mt-1 uppercase tracking-wider font-semibold">
+                      {selectedTypeInfo?.title} • {config.jobRole}
+                   </p>
+                </div>
+             </div>
           </div>
           
           {/* Timer & Status */}
           <div className="flex items-center gap-3 pointer-events-auto">
             {/* Timer */}
-            <div className={`bg-white/80 dark:bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border flex items-center gap-2 transition-colors ${
-              isTimeWarning ? 'border-amber-500/50 text-amber-600 dark:text-amber-400' : 
-              isTimeOver ? 'border-red-500/50 text-red-600 dark:text-red-400' : 
-              'border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white'
+            <div className={`bg-black/40 backdrop-blur-xl px-4 py-2.5 rounded-xl border flex items-center gap-2 transition-colors shadow-lg ${
+              isTimeWarning ? 'border-amber-500/50 text-amber-400 bg-amber-500/10' : 
+              isTimeOver ? 'border-red-500/50 text-red-400 bg-red-500/10' : 
+              'border-white/10 text-white'
             }`}>
               <Clock className="w-4 h-4" />
-              <span className="font-mono text-sm font-semibold">{formatTime(remainingTime)}</span>
+              <span className="font-mono text-sm font-bold tracking-widest">{formatTime(remainingTime)}</span>
             </div>
 
             {/* Question Counter */}
-            <div className="bg-white/80 dark:bg-black/60 backdrop-blur-md px-3 py-2 rounded-full border border-zinc-200 dark:border-white/10 text-xs text-zinc-700 dark:text-white">
-              Q{questionCount}
+            <div className="bg-black/40 backdrop-blur-xl px-4 py-2.5 rounded-xl border border-white/10 text-sm font-medium text-white shadow-lg flex items-center gap-2">
+              <span className="text-zinc-500 text-xs uppercase">Question</span>
+              <span className="font-bold">{questionCount}</span>
             </div>
 
-            {/* Face Tracking Status */}
-            {isFaceMonitorReady && (
-              <div className="bg-white/80 dark:bg-black/60 backdrop-blur px-3 py-1.5 rounded-full border border-zinc-200 dark:border-white/10 flex items-center gap-2">
-                <ScanFace className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
-                <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400">Active</span>
-              </div>
-            )}
-
             {/* Integrity Status */}
-            <div className="bg-white/80 dark:bg-black/60 backdrop-blur px-3 py-1.5 rounded-full border border-zinc-200 dark:border-white/10 flex items-center gap-2">
+            <div className={`bg-black/40 backdrop-blur-xl px-4 py-2.5 rounded-xl border flex items-center gap-2 shadow-lg ${warningCount > 0 ? 'border-red-500/30 bg-red-500/5' : 'border-white/10'}`}>
               <ShieldCheckIcon status={warningCount === 0 ? 'good' : warningCount < 3 ? 'warning' : 'danger'} />
-              <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400">{WARNING_THRESHOLD - warningCount} left</span>
+              <span className={`text-xs font-mono font-medium ${warningCount > 0 ? 'text-red-300' : 'text-zinc-400'}`}>
+                 {WARNING_THRESHOLD - warningCount} warnings left
+              </span>
             </div>
           </div>
         </header>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col items-center justify-center relative p-4">
+        <div className="flex-1 flex flex-col items-center justify-center relative p-6">
           
           {/* Error Modal */}
           {status === ConnectionStatus.ERROR && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center bg-zinc-900/60 backdrop-blur-2xl p-6">
-              <div className="glass-card-elevated p-8 max-w-sm w-full text-center border border-red-500/20 shadow-2xl">
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-6">
+              <div className="glass-card-elevated p-8 max-w-sm w-full text-center border border-red-500/20 shadow-2xl bg-zinc-900 rounded-2xl">
                 <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
                   <AlertCircle className="w-8 h-8 text-red-500" />
                 </div>
@@ -1058,8 +1064,8 @@ BEGIN THE INTERVIEW NOW. Greet the candidate and start with your opening questio
             </div>
           )}
 
-          {/* Video Container */}
-          <div className="relative w-full max-w-5xl aspect-video bg-zinc-900 dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-2xl ring-1 ring-black/5 dark:ring-white/5">
+          {/* Video Container - Enhanced */}
+          <div className="relative w-full max-w-[85vw] aspect-video bg-black rounded-3xl overflow-hidden border border-white/10 shadow-2xl ring-1 ring-white/5 group">
             {/* User Camera */}
             <video 
               ref={videoRef} 
@@ -1071,15 +1077,16 @@ BEGIN THE INTERVIEW NOW. Greet the candidate and start with your opening questio
             
             {!isCamOn && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-24 h-24 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center">
-                  <VideoOff size={40} className="text-zinc-600" />
+                <div className="w-32 h-32 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center shadow-inner">
+                  <VideoOff size={48} className="text-zinc-700" />
                 </div>
+                <p className="absolute mt-40 text-zinc-500 font-medium">Camera is disabled</p>
               </div>
             )}
 
-            {/* AI Avatar & Indicator */}
-            <div className={`absolute top-6 left-1/2 -translate-x-1/2 transition-all duration-300 flex flex-col items-center gap-3 ${isAiSpeaking ? 'scale-110' : 'scale-100'}`}>
-              <div className={`relative w-24 h-24 rounded-full border-4 border-white/10 shadow-2xl overflow-hidden transition-all duration-300 ${isAiSpeaking ? 'ring-4 ring-emerald-500/50 shadow-emerald-500/50' : ''}`}>
+            {/* AI Avatar & Dashboard */}
+            <div className={`absolute top-8 left-1/2 -translate-x-1/2 transition-all duration-500 flex flex-col items-center gap-4 ${isAiSpeaking ? 'scale-105' : 'scale-100'}`}>
+              <div className={`relative w-28 h-28 rounded-full border-4 border-white/10 shadow-2xl overflow-hidden transition-all duration-300 z-10 bg-black ${isAiSpeaking ? 'ring-4 ring-emerald-500/30 shadow-emerald-500/40 border-emerald-500/50' : ''}`}>
                 <img 
                   src="/ai-avatar.png" 
                   alt="AI Interviewer" 
@@ -1087,129 +1094,160 @@ BEGIN THE INTERVIEW NOW. Greet the candidate and start with your opening questio
                 />
                 {/* Speaking Wave Overlay */}
                 {isAiSpeaking && (
-                  <div className="absolute inset-0 bg-emerald-500/20 animate-pulse" />
+                   <div className="absolute inset-0 bg-emerald-500/20 mix-blend-overlay animate-pulse" />
                 )}
               </div>
               
-              <div className={`bg-black/60 backdrop-blur-xl px-5 py-2 rounded-full flex items-center gap-3 border border-white/10 shadow-lg transition-opacity duration-300 ${isAiSpeaking ? 'opacity-100' : 'opacity-0'}`}>
+              {/* Audio Visualizer Pill */}
+              <div className={`bg-black/80 backdrop-blur-xl px-6 py-2.5 rounded-full flex items-center gap-3 border border-white/10 shadow-lg transition-all duration-300 ${isAiSpeaking ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+                <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest mr-1">Speaking</span>
                 <div ref={visualizerRef} className="flex items-center gap-1 h-4 items-end">
                   {[...Array(5)].map((_, i) => (
-                    <div key={i} className="w-1 bg-white rounded-full transition-[height] duration-75" style={{ height: '4px' }}></div>
+                    <div key={i} className="w-1 bg-gradient-to-t from-emerald-500 to-teal-400 rounded-full transition-[height] duration-75 shadow-[0_0_8px_rgba(16,185,129,0.5)]" style={{ height: '4px' }}></div>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* Listening State */}
+            {/* Listening State Pill */}
             {status === ConnectionStatus.CONNECTED && !isAiSpeaking && activeSourcesCountRef.current === 0 && (
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none">
-                <div className="bg-black/60 backdrop-blur-md text-zinc-300 text-xs px-4 py-2 rounded-full border border-white/5 flex items-center gap-2 shadow-lg">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                  Listening...
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none animate-in fade-in slide-in-from-bottom-4 duration-300">
+                <div className="bg-black/70 backdrop-blur-xl text-white text-sm px-6 py-3 rounded-full border border-emerald-500/20 flex items-center gap-3 shadow-lg ring-1 ring-emerald-500/10">
+                  <span className="relative flex h-3 w-3">
+                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                     <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]"></span>
+                  </span>
+                  <span className="font-medium tracking-wide">Listening...</span>
                 </div>
               </div>
             )}
 
             {/* Loading State */}
             {status === ConnectionStatus.CONNECTING && (
-              <div className="absolute inset-0 flex items-center justify-center bg-zinc-950 z-10">
+              <div className="absolute inset-0 flex items-center justify-center bg-black/90 z-20 backdrop-blur-sm">
                 <div className="text-center">
-                  <div className="loading-spinner mx-auto mb-4"></div>
-                  <p className="text-zinc-500 text-xs uppercase tracking-widest">Connecting to AI...</p>
+                  <div className="relative w-16 h-16 mx-auto mb-6">
+                     <div className="absolute inset-0 border-t-2 border-l-2 border-emerald-500 rounded-full animate-spin"></div>
+                     <div className="absolute inset-2 border-r-2 border-b-2 border-teal-500 rounded-full animate-spin" style={{ animationDirection: 'reverse' }}></div>
+                  </div>
+                  <p className="text-emerald-500 font-bold text-sm uppercase tracking-[0.2em] animate-pulse">Establishing Connection</p>
                 </div>
               </div>
             )}
 
             {/* User Name Tag */}
-            <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-full border border-white/10 z-10">
-              {config.candidateName}
+            <div className="absolute bottom-6 left-6 group-hover:opacity-100 opacity-60 transition-opacity duration-300">
+               <div className="bg-black/60 backdrop-blur-md text-white text-xs font-semibold px-4 py-2 rounded-lg border border-white/10 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  {config.candidateName} (You)
+               </div>
             </div>
           </div>
         </div>
 
         {/* Floating Control Bar */}
-        <footer className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30">
-          <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-zinc-200 dark:border-white/10 p-2 rounded-full shadow-xl flex items-center gap-2">
+        <footer className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-8 duration-500 delay-200">
+          <div className="bg-black/80 backdrop-blur-2xl border border-white/10 px-6 py-3 rounded-full shadow-2xl flex items-center gap-4 ring-1 ring-white/5 hover:scale-105 transition-transform duration-300">
             <IconButton 
-              icon={isMicOn ? <Mic size={20} /> : <MicOff size={20} />}
+              icon={isMicOn ? <Mic size={20} className="text-white" /> : <MicOff size={20} className="text-red-400" />}
               onClick={toggleMic}
               variant={isMicOn ? "secondary" : "danger"}
+              className={`w-12 h-12 rounded-full border transition-all ${isMicOn ? 'bg-white/10 border-white/10 hover:bg-white/20' : 'bg-red-500/10 border-red-500/20 hover:bg-red-500/20'}`}
               aria-label={isMicOn ? "Mute microphone" : "Unmute microphone"}
             />
 
             <IconButton 
-              icon={isCamOn ? <Video size={20} /> : <VideoOff size={20} />}
+              icon={isCamOn ? <Video size={20} className="text-white" /> : <VideoOff size={20} className="text-red-400" />}
               onClick={toggleCam}
               variant={isCamOn ? "secondary" : "danger"}
+              className={`w-12 h-12 rounded-full border transition-all ${isCamOn ? 'bg-white/10 border-white/10 hover:bg-white/20' : 'bg-red-500/10 border-red-500/20 hover:bg-red-500/20'}`}
               aria-label={isCamOn ? "Turn off camera" : "Turn on camera"}
             />
 
-            <div className="w-px h-8 bg-white/10 mx-1"></div>
+            <div className="w-px h-8 bg-white/10 mx-2"></div>
 
             <IconButton 
-              icon={<MessageSquare size={20} />}
+              icon={<MessageSquare size={20} className={showTranscript ? "text-emerald-400" : "text-white"} />}
               onClick={() => setShowTranscript(!showTranscript)}
-              variant={showTranscript ? "primary" : "ghost"}
+              variant="ghost"
+              className={`w-12 h-12 rounded-full border transition-all ${showTranscript ? 'bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20' : 'bg-white/5 border-transparent hover:bg-white/10'}`}
               aria-label="Toggle transcript"
             />
 
-            <div className="w-px h-8 bg-white/10 mx-1"></div>
+            <div className="w-px h-8 bg-white/10 mx-2"></div>
 
             <Button 
               onClick={handleEndSession}
-              variant="primary"
+              variant="danger"
               size="md"
+              className="bg-red-600 hover:bg-red-700 text-white border-none rounded-full px-6 shadow-lg shadow-red-900/20 font-semibold tracking-wide"
               leftIcon={<X size={18} />}
             >
-              End
+              End Session
             </Button>
           </div>
         </footer>
       </div>
 
-      {/* Transcript Panel */}
+      {/* Transcript Panel - Floating Glass Card */}
       {showTranscript && (
-        <div className="w-80 transcript-panel flex flex-col h-full bg-white/95 dark:bg-black/95 backdrop-blur-md border-l border-zinc-200 dark:border-zinc-800">
-          <div className="p-4 border-b border-zinc-200 dark:border-white/5 flex items-center justify-between">
-            <h3 className="font-semibold text-sm flex items-center gap-2 text-zinc-900 dark:text-white">
-              <MessageSquare className="w-4 h-4" />
-              Transcript
-            </h3>
-            <button 
-              onClick={() => setShowTranscript(false)}
-              className="w-6 h-6 rounded flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-zinc-500 dark:text-zinc-400"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {transcript.length === 0 ? (
-              <div className="p-4 text-center text-zinc-500 text-sm">
-                Transcript will appear here...
-              </div>
-            ) : (
-              <div className="p-4 space-y-4">
-                {transcript.map((entry) => (
-                  <div 
-                    key={entry.id}
-                    className={`transcript-entry ${entry.speaker}`}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-xs font-semibold ${entry.speaker === 'ai' ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                        {entry.speaker === 'ai' ? 'Interviewer' : 'You'}
-                      </span>
-                      <span className="text-[10px] text-zinc-500 dark:text-zinc-600">
-                        {entry.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                    <p className="text-sm text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-900/50 p-2 rounded-lg inline-block">
-                      {entry.text}
-                    </p>
+        <div className="absolute top-24 right-6 bottom-32 w-96 z-40 animate-in slide-in-from-right-10 fade-in duration-300">
+           <div className="flex flex-col h-full bg-black/80 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden ring-1 ring-white/5">
+              {/* Header */}
+              <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
+                <h3 className="font-bold text-sm flex items-center gap-2 text-white">
+                  <div className="p-1.5 bg-emerald-500/10 rounded-lg">
+                     <MessageSquare className="w-4 h-4 text-emerald-500" />
                   </div>
-                ))}
+                  Live Transcript
+                </h3>
+                <button 
+                  onClick={() => setShowTranscript(false)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors text-zinc-400 hover:text-white"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
-            )}
-          </div>
+              
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                {transcript.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-6">
+                    <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3">
+                       <MessageSquare className="w-6 h-6 text-zinc-500" />
+                    </div>
+                    <p className="text-zinc-500 text-sm font-medium">Conversation started...</p>
+                    <p className="text-zinc-600 text-xs mt-1">Transcript will appear here in real-time</p>
+                  </div>
+                ) : (
+                  <>
+                    {transcript.map((entry) => (
+                      <div 
+                        key={entry.id}
+                        className={`flex flex-col gap-1 max-w-[90%] ${entry.speaker === 'user' ? 'ml-auto items-end' : 'mr-auto items-start'}`}
+                      >
+                        <div className="flex items-center gap-2 px-1">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider ${entry.speaker === 'ai' ? 'text-emerald-400' : 'text-zinc-400'}`}>
+                            {entry.speaker === 'ai' ? 'Interviewer' : 'You'}
+                          </span>
+                          <span className="text-[10px] text-zinc-600">
+                            {entry.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <div className={`p-3 rounded-2xl text-sm leading-relaxed ${
+                           entry.speaker === 'ai' 
+                             ? 'bg-zinc-800/80 border border-white/5 text-zinc-200 rounded-tl-none' 
+                             : 'bg-emerald-600 text-white rounded-tr-none shadow-lg shadow-emerald-900/20'
+                        }`}>
+                          {entry.text}
+                        </div>
+                      </div>
+                    ))}
+                    <div ref={(el) => el?.scrollIntoView({ behavior: 'smooth' })} />
+                  </>
+                )}
+              </div>
+           </div>
         </div>
       )}
     </div>
