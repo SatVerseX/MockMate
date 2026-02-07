@@ -184,3 +184,22 @@ export const DEFAULT_SETTINGS: AppSettings = {
 // Warning Thresholds
 export const WARNING_THRESHOLD = 4;
 export const LOOK_AWAY_THRESHOLD_MS = 3000;
+
+// Subscription Plans
+export interface Plan {
+  id: string; // Razorpay Plan ID
+  name: string;
+  price: number; // in paise
+  interval: 'monthly' | 'yearly';
+  features: string[];
+}
+
+// User Subscription
+export interface Subscription {
+  user_id: string;
+  razorpay_customer_id: string;
+  razorpay_subscription_id: string;
+  plan_id: string;
+  status: 'active' | 'created' | 'halted' | 'cancelled' | 'completed' | 'expired';
+  current_period_end: string; // ISO date string
+}

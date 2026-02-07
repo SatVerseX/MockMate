@@ -1,0 +1,2 @@
+-- Migration file cleared.
+-- Plans will be initialized via the 'init-plans' Edge Function directly from Razorpay.

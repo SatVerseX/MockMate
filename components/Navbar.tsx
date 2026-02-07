@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { Bot, Sun, Moon, Menu, X, History, Settings, LogOut, User } from 'lucide-react';
+import { Bot, Sun, Moon, Menu, X, History, Settings, LogOut, User, Crown } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './Button';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface NavbarProps {
   onViewHistory?: () => void;
@@ -62,6 +63,12 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* Right Actions */}
             <div className="hidden md:flex items-center gap-3">
+              <Link to="/pricing">
+                <Button variant="outline" size="sm" leftIcon={<Crown className="w-4 h-4 text-amber-500" />}>
+                  Upgrade
+                </Button>
+              </Link>
+
               <button 
                 onClick={toggleTheme}
                 className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-400 transition-colors"
@@ -171,6 +178,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           <div className="flex flex-col gap-3 mt-4">
+             <Link to="/pricing" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button variant="outline" size="lg" fullWidth leftIcon={<Crown className="w-5 h-5 text-amber-500" />}>
+                  Upgrade Plan
+                </Button>
+             </Link>
+             
              {onViewHistory && (
                 <Button variant="outline" size="lg" onClick={() => { onViewHistory(); setIsMobileMenuOpen(false); }} leftIcon={<History className="w-5 h-5" />}>
                   History

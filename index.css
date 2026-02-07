@@ -1,3 +1,6 @@
+@import "tailwindcss";
+@config "./tailwind.config.js";
+
 /* ==========================================
    MockMate AI Interviewer - Design System
    Premium Dark Theme with Glass Morphism

@@ -12,6 +12,7 @@ import { HistoryScreen } from './components/HistoryScreen';
 import { SettingsScreen } from './components/SettingsScreen';
 import { AuthScreen } from './components/AuthScreen';
 import { GuidePage } from './components/GuidePage';
+import { PricingScreen } from './components/PricingScreen';
 import { InterviewConfig, AppSettings, DEFAULT_SETTINGS } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { ThemeProvider } from './context/ThemeContext';
@@ -270,6 +271,15 @@ const AppContent: React.FC = () => {
           <Route 
             path="/guide" 
             element={<GuidePage />} 
+          />
+
+          <Route 
+            path="/pricing" 
+            element={
+              <ProtectedRoute>
+                 <PricingScreen />
+              </ProtectedRoute>
+            } 
           />
           
           {/* Catch-all redirect to home */}

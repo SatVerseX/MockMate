@@ -1,6 +1,6 @@
 
-import React, { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Plus, 
   Target, 
@@ -19,6 +19,7 @@ import { Button } from './Button';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useInterviews } from '../hooks/useSupabase';
+import { useBilling } from '../hooks/useBilling';
 import { INTERVIEW_TYPES } from '../types';
 
 interface UserDashboardProps {
@@ -35,6 +36,28 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
   const { theme } = useTheme();
   const { user, profile } = useAuth();
   const { interviews, isLoading } = useInterviews();
+  const { checkInterviewLimit } = useBilling();
+  const navigate = useNavigate();
+  const [checkingLimit, setCheckingLimit] = useState(false);
+
+  const handleStartClick = async () => {
+    setCheckingLimit(true);
+    try {
+        const { allowed, remaining } = await checkInterviewLimit();
+        if (allowed) {
+            onStartNew();
+        } else {
+            if (window.confirm("Daily Limit Reached! \n\nYou have used your free daily interview. Upgrade to Pro for unlimited practice?")) {
+                navigate('/pricing');
+            }
+        }
+    } catch (err) {
+        console.error(err);
+        onStartNew(); // Fail safe
+    } finally {
+        setCheckingLimit(false);
+    }
+  };
 
   // Get user's display name
   const userName = useMemo(() => {
@@ -205,11 +228,12 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
           <Button 
             size="lg" 
             glow 
-            onClick={onStartNew}
-            leftIcon={<Plus className="w-5 h-5" />}
+            onClick={handleStartClick}
+            disabled={checkingLimit}
+            leftIcon={checkingLimit ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
             className="shadow-xl shadow-emerald-500/20"
           >
-            New Interview
+            {checkingLimit ? "Checking..." : "New Interview"}
           </Button>
         </div>
 
