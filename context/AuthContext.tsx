@@ -19,6 +19,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signInWithGoogle: () => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -146,6 +147,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setSession(null);
   };
 
+  // Refresh profile manually
+  const refreshProfile = async () => {
+    if (user) {
+      await fetchProfile(user.id, user.email || '');
+    }
+  };
+
   const value = {
     user,
     profile,
@@ -155,6 +163,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signIn,
     signInWithGoogle,
     signOut,
+    refreshProfile
   };
 
   return (

@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from './Button';
 import { useAuth } from '../context/AuthContext';
 import { useBilling } from '../hooks/useBilling';
+import { useUpdateProfile } from '../hooks/useSupabase';
 import { Navbar } from './Navbar';
 import {
   User,
@@ -19,7 +20,10 @@ import {
   AlertCircle,
   Loader2,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  Pencil, // Import Pencil icon
+  X,
+  Check
 } from 'lucide-react';
 
 interface ProfileScreenProps {
@@ -28,14 +32,39 @@ interface ProfileScreenProps {
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack }) => {
   const navigate = useNavigate();
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, refreshProfile } = useAuth();
   const { subscription, planTier, isPro, loading } = useBilling();
+  const { updateProfile, isUpdating } = useUpdateProfile();
+
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newName, setNewName] = useState('');
+
+  useEffect(() => {
+    if (profile?.fullName) {
+      setNewName(profile.fullName);
+    }
+  }, [profile]);
 
   const handleSignOut = async () => {
     if (window.confirm('Are you sure you want to sign out?')) {
       await signOut();
       navigate('/');
     }
+  };
+
+  const handleSaveName = async () => {
+    if (!newName.trim()) return;
+    
+    const success = await updateProfile({ fullName: newName });
+    if (success) {
+      await refreshProfile();
+      setIsEditingName(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setNewName(profile?.fullName || '');
+    setIsEditingName(false);
   };
 
   const formatDate = (dateString: string | undefined) => {
@@ -78,8 +107,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack }) => {
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white transition-colors duration-300 font-sans selection:bg-emerald-500/30">
+      {/* Navigation */}
       <Navbar onStart={() => navigate('/setup')} />
-
+      
       {/* Background Decor */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
@@ -132,14 +162,51 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack }) => {
               {/* Details */}
               <div className="flex-1 space-y-4 w-full">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div>
-                    <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-1 flex items-center gap-3">
-                      {profile?.fullName || 'User'}
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getPlanBadgeColor()}`}>
-                        {getPlanDisplayName()}
-                      </span>
-                    </h2>
-                    <div className="flex items-center gap-4 text-sm text-zinc-500 dark:text-zinc-400">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-1">
+                      {isEditingName ? (
+                        <div className="flex items-center gap-2 w-full max-w-sm">
+                          <input
+                            type="text"
+                            value={newName}
+                            onChange={(e) => setNewName(e.target.value)}
+                            className="bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 rounded-lg text-lg font-bold w-full focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                            placeholder="Enter your name"
+                            autoFocus
+                          />
+                          <button 
+                            onClick={handleSaveName}
+                            disabled={isUpdating}
+                            className="p-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors disabled:opacity-50"
+                          >
+                             {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                          </button>
+                          <button 
+                            onClick={handleCancelEdit}
+                            disabled={isUpdating}
+                            className="p-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
+                          >
+                             <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <h2 className="text-2xl font-bold text-zinc-900 dark:text-white flex items-center gap-3 group/name">
+                          {profile?.fullName || 'User'}
+                          <button 
+                            onClick={() => setIsEditingName(true)}
+                            className="text-zinc-400 hover:text-emerald-500 transition-colors opacity-0 group-hover/name:opacity-100"
+                            title="Edit name"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ml-2 ${getPlanBadgeColor()}`}>
+                            {getPlanDisplayName()}
+                          </span>
+                        </h2>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center gap-4 text-sm text-zinc-500 dark:text-zinc-400 mt-2">
                       <span className="flex items-center gap-1.5">
                         <Mail className="w-4 h-4" />
                         {user?.email || 'No email'}
@@ -154,7 +221,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack }) => {
                     variant="outline" 
                     onClick={() => navigate('/settings')}
                     size="sm"
-                    className="border-zinc-200 dark:border-zinc-800"
+                    className="border-zinc-200 dark:border-zinc-800 shrink-0"
                   >
                     Edit Settings
                   </Button>
