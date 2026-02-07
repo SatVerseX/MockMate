@@ -31,10 +31,12 @@ export function useBilling() {
             .from('subscriptions')
             .select('*')
             .eq('user_id', user.id)
-            .single();
+            .maybeSingle(); // Use maybeSingle() to gracefully handle no subscription (free users)
 
         if (!error && data) {
             setSubscription(data as Subscription);
+        } else {
+            setSubscription(null); // Explicitly set to null if no subscription
         }
     }, [user]);
 
