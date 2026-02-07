@@ -1,15 +1,127 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, Loader2, Sparkles, ShieldCheck, Zap } from 'lucide-react';
+import { CheckCircle2, Loader2, Sparkles, ShieldCheck, Zap, Phone, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useBilling } from '../hooks/useBilling';
 import { Button } from './Button';
 import { Plan } from '../types';
 import { Toast } from './Toast';
+import { useAuth } from '../context/AuthContext';
+
+// Phone Modal Component
+const PhoneModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (phone: string) => void;
+  loading: boolean;
+  planName: string;
+}> = ({ isOpen, onClose, onConfirm, loading, planName }) => {
+  const [phone, setPhone] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = () => {
+    // Validate phone number (Indian format)
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      setError('Please enter a valid 10-digit mobile number');
+      return;
+    }
+    setError('');
+    onConfirm(phone);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="relative w-full max-w-md bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+        {/* Header Gradient */}
+        <div className="h-2 bg-gradient-to-r from-emerald-500 to-teal-500" />
+        
+        {/* Close Button */}
+        <button 
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition-colors rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800"
+        >
+          <X size={20} />
+        </button>
+
+        <div className="p-6 pt-8">
+          {/* Icon */}
+          <div className="mx-auto w-16 h-16 mb-6 rounded-full bg-emerald-500/10 flex items-center justify-center">
+            <Phone className="w-8 h-8 text-emerald-500" />
+          </div>
+
+          {/* Title */}
+          <h2 className="text-2xl font-bold text-center text-zinc-900 dark:text-white mb-2">
+            Complete Your Purchase
+          </h2>
+          <p className="text-center text-zinc-500 dark:text-zinc-400 mb-6">
+            Enter your phone number to subscribe to <span className="font-semibold text-emerald-500">{planName}</span>
+          </p>
+
+          {/* Phone Input */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              Mobile Number
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-medium">
+                +91
+              </span>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  setPhone(value);
+                  setError('');
+                }}
+                placeholder="9876543210"
+                className="w-full pl-14 pr-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+              />
+            </div>
+            {error && (
+              <p className="mt-2 text-sm text-red-500">{error}</p>
+            )}
+          </div>
+
+          {/* Info Text */}
+          <p className="text-xs text-zinc-400 mb-6 text-center">
+            Your number will be used for payment verification and order updates.
+          </p>
+
+          {/* Submit Button */}
+          <Button
+            onClick={handleSubmit}
+            variant="primary"
+            fullWidth
+            disabled={loading || phone.length !== 10}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/25"
+          >
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" /> Processing...
+              </span>
+            ) : (
+              'Proceed to Payment'
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const PricingScreen: React.FC = () => {
+  const { user } = useAuth();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const { subscribeToPlan, loading: processing, subscription, isPro, toast, hideToast } = useBilling();
+  
+  // Phone modal state
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [selectedPlanName, setSelectedPlanName] = useState('');
 
   useEffect(() => {
     async function loadPlans() {
@@ -34,6 +146,44 @@ export const PricingScreen: React.FC = () => {
     }
     loadPlans();
   }, []);
+
+  // Handle subscribe click - check if phone exists
+  const handleSubscribeClick = async (planId: string, planName: string) => {
+    // Check if user already has phone number
+    const userPhone = user?.user_metadata?.phone || user?.phone;
+    
+    if (userPhone) {
+      // Phone exists, proceed directly
+      await subscribeToPlan(planId);
+    } else {
+      // Show phone modal
+      setSelectedPlanId(planId);
+      setSelectedPlanName(planName);
+      setShowPhoneModal(true);
+    }
+  };
+
+  // Confirm payment after phone entry
+  const confirmPayment = async (phone: string) => {
+    if (!selectedPlanId) return;
+    
+    try {
+      // Save phone to user metadata
+      const { error } = await supabase.auth.updateUser({
+        data: { phone }
+      });
+      
+      if (error) {
+        console.error('Failed to save phone:', error);
+      }
+      
+      // Close modal and proceed with payment
+      setShowPhoneModal(false);
+      await subscribeToPlan(selectedPlanId);
+    } catch (err) {
+      console.error('Payment error:', err);
+    }
+  };
 
   if (loading) {
     return (
@@ -175,7 +325,7 @@ export const PricingScreen: React.FC = () => {
 
                 <div className="mt-auto">
                   <Button 
-                    onClick={() => !isCurrentPlan && subscribeToPlan(plan.id)}
+                    onClick={() => !isCurrentPlan && handleSubscribeClick(plan.id, plan.name)}
                     variant={isCurrentPlan ?  "secondary" : "primary"}
                     fullWidth
                     disabled={processing || isCurrentPlan}
@@ -208,6 +358,15 @@ export const PricingScreen: React.FC = () => {
             </div>
         </div>
       </div>
+
+      {/* Phone Collection Modal */}
+      <PhoneModal
+        isOpen={showPhoneModal}
+        onClose={() => setShowPhoneModal(false)}
+        onConfirm={confirmPayment}
+        loading={processing}
+        planName={selectedPlanName}
+      />
 
       {/* Toast Notification */}
       <Toast 

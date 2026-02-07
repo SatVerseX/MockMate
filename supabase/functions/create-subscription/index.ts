@@ -120,10 +120,18 @@ Deno.serve(async (req) => {
         // 3. Create Razorpay Customer if needed (only for recurring)
         if (!razorpayCustomerId) {
             console.log('Creating new Razorpay customer...')
+            const customerEmail = user.email || `user_${user.id.slice(0, 8)}@mockmate.app`
+            const customerName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'
+            const customerContact = user.user_metadata?.phone || user.phone || '9999999999' // Fallback contact
+
+            console.log('Customer details:', { email: customerEmail, name: customerName, contact: customerContact })
+
             try {
                 const customer = await razorpay.customers.create({
-                    email: user.email,
-                    name: user.user_metadata?.full_name || 'User',
+                    email: customerEmail,
+                    name: customerName,
+                    contact: customerContact,
+                    fail_existing: '0', // Return existing customer if already exists
                     notes: { supabase_user_id: user.id }
                 })
                 razorpayCustomerId = customer.id
@@ -140,7 +148,12 @@ Deno.serve(async (req) => {
                     throw new Error(`Failed to save customer: ${upsertError.message}`)
                 }
             } catch (customerError: any) {
-                console.log('Customer creation error:', JSON.stringify(customerError, null, 2))
+                console.log('Customer creation error details:', {
+                    statusCode: customerError?.statusCode,
+                    code: customerError?.error?.code,
+                    description: customerError?.error?.description,
+                    fullError: JSON.stringify(customerError, null, 2)
+                })
                 const errorMessage = customerError?.error?.description || customerError?.message || JSON.stringify(customerError)
                 throw new Error(`Failed to create customer: ${errorMessage}`)
             }
