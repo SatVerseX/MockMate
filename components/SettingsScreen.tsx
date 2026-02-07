@@ -139,47 +139,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       <main className="relative z-10 px-6 py-8 lg:px-12">
         <div className="max-w-3xl mx-auto space-y-6">
           
-          {/* Appearance Section */}
-          <div className="glass-card p-6 fade-in-up bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 shadow-sm">
-            <h2 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-4">
-              Appearance
-            </h2>
-            
-            <div className="space-y-4">
-              {/* Theme Selection */}
-              <div className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center">
-                    <Moon className="w-5 h-5 text-zinc-500 dark:text-zinc-400" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-zinc-900 dark:text-white">Theme</div>
-                    <div className="text-sm text-zinc-500">Choose your preferred theme</div>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  {([
-                    { value: 'dark', icon: <Moon className="w-4 h-4" />, label: 'Dark' },
-                    { value: 'light', icon: <Sun className="w-4 h-4" />, label: 'Light' },
-                    { value: 'system', icon: <Monitor className="w-4 h-4" />, label: 'System' },
-                  ] as const).map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => updateSetting('theme', option.value)}
-                      className={`px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-all border ${
-                        settings.theme === option.value
-                          ? 'bg-zinc-900 dark:bg-white text-white dark:text-black border-zinc-900 dark:border-white'
-                          : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700'
-                      }`}
-                    >
-                      {option.icon}
-                      <span className="hidden sm:inline">{option.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+          
 
           {/* Audio & Video Section */}
           <div className="glass-card p-6 fade-in-up bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 shadow-sm" style={{ animationDelay: '0.1s' }}>
