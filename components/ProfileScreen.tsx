@@ -351,7 +351,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack }) => {
                           {profile?.fullName || 'User'}
                           <button 
                             onClick={() => setIsEditingName(true)}
-                            className="text-zinc-400 hover:text-emerald-500 transition-colors opacity-0 group-hover/name:opacity-100"
+                            className="text-zinc-400 hover:text-emerald-500 transition-colors"
                             title="Edit name"
                           >
                             <Pencil className="w-4 h-4" />
