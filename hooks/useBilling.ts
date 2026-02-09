@@ -28,6 +28,7 @@ export interface ToastState {
 export function useBilling() {
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
+    const [cancelling, setCancelling] = useState(false);
     const [subscription, setSubscription] = useState<Subscription | null>(null);
     const [toast, setToast] = useState<ToastState>({ isVisible: false, message: '', type: 'success' });
 
@@ -176,10 +177,32 @@ export function useBilling() {
 
     // Cancel Subscription
     const cancelSubscription = async () => {
-        // Implementation for cancellation if needed
-        // Requires another backend function usually
-        // For now, redirect to Razorpay portal or show contact support
-        alert("To cancel, please contact support or manage via Razorpay portal.");
+        if (!user || !subscription) {
+            throw new Error('No active subscription');
+        }
+
+        setCancelling(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('cancel-subscription');
+
+            if (error) {
+                throw new Error(error.message || 'Failed to cancel subscription');
+            }
+
+            if (data?.error) {
+                throw new Error(data.error);
+            }
+
+            // Refresh subscription status
+            await fetchSubscription();
+            showToast('Subscription cancelled successfully', 'success');
+        } catch (err: any) {
+            console.error('Cancel subscription error:', err);
+            showToast(err.message || 'Failed to cancel subscription', 'error');
+            throw err; // Re-throw for modal to handle
+        } finally {
+            setCancelling(false);
+        }
     };
 
     // Check Interview Limit
@@ -257,8 +280,10 @@ export function useBilling() {
     return {
         subscription,
         loading,
+        cancelling,
         subscribeToPlan,
         cancelSubscription,
+        fetchSubscription,
         checkInterviewLimit,
         planTier,
         canAccessFeature,

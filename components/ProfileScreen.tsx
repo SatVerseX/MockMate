@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from './Button';
+import { BillingModal } from './BillingModal';
 import { useAuth } from '../context/AuthContext';
 import { useBilling } from '../hooks/useBilling';
 import { useUpdateProfile } from '../hooks/useSupabase';
@@ -33,11 +34,12 @@ interface ProfileScreenProps {
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack }) => {
   const navigate = useNavigate();
   const { user, profile, signOut, refreshProfile } = useAuth();
-  const { subscription, planTier, isPro, loading } = useBilling();
+  const { subscription, planTier, isPro, loading, cancelling, cancelSubscription } = useBilling();
   const { updateProfile, isUpdating } = useUpdateProfile();
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState('');
+  const [showBillingModal, setShowBillingModal] = useState(false);
 
   useEffect(() => {
     if (profile?.fullName) {
@@ -83,6 +85,16 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack }) => {
       case 'starter': return 'Starter';
       case 'one_day': return 'One Day Pass';
       default: return 'Free Plan';
+    }
+  };
+
+  const getPlanDetails = () => {
+    switch (planTier) {
+      case 'pro_yearly': return { price: 199900, interval: 'yearly' };
+      case 'pro_monthly': return { price: 29900, interval: 'monthly' };
+      case 'starter': return { price: 19900, interval: 'monthly' };
+      case 'one_day': return { price: 2000, interval: 'daily' };
+      default: return { price: 0, interval: 'month' };
     }
   };
 
@@ -295,7 +307,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack }) => {
                         {isPro ? 'Change Plan' : 'Upgrade to Pro'}
                      </Button>
                      {isPro && (
-                       <Button variant="ghost" className="text-zinc-500">
+                       <Button 
+                         variant="ghost" 
+                         className="text-zinc-500"
+                         onClick={() => setShowBillingModal(true)}
+                       >
                           Manage Billing
                        </Button>
                      )}
@@ -357,6 +373,18 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack }) => {
            </div>
         </div>
       </main>
+
+      {/* Billing Modal */}
+      <BillingModal
+        isOpen={showBillingModal}
+        onClose={() => setShowBillingModal(false)}
+        subscription={subscription}
+        planName={getPlanDisplayName()}
+        planPrice={getPlanDetails().price}
+        planInterval={getPlanDetails().interval}
+        onCancelSubscription={cancelSubscription}
+        cancelling={cancelling}
+      />
     </div>
   );
 };
