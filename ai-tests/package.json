@@ -1,0 +1,47 @@
+{
+  "name": "mockmate-ai-tests",
+  "version": "1.0.0",
+  "description": "AI-powered test suite for MockMate using DeepSeek-R1 and Llama 3.1",
+  "main": "runner.js",
+  "scripts": {
+    "test": "node runner.js --all",
+    "test:auth": "node runner.js --suite auth",
+    "test:interview": "node runner.js --suite interview",
+    "test:billing": "node runner.js --suite billing",
+    "test:api": "node runner.js --suite api",
+    "test:performance": "node runner.js --suite performance",
+    "test:accessibility": "node runner.js --suite accessibility",
+    "test:security": "node runner.js --suite security",
+    "test:components": "node runner.js --suite components",
+    "test:visual": "node runner.js --suite visual",
+    "test:e2e": "node runner.js --suite e2e",
+    "test:integration": "node runner.js --suite integration",
+    "test:exploratory": "node runner.js --suite exploratory",
+    "test:category:core": "node runner.js --category core",
+    "test:category:quality": "node runner.js --category quality",
+    "test:category:ui": "node runner.js --category ui",
+    "test:category:flows": "node runner.js --category flows",
+    "test:category:ai": "node runner.js --category ai",
+    "test:verbose": "node runner.js --all --verbose"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "chalk": "^4.1.2",
+    "dotenv": "^16.3.1",
+    "ollama": "^0.5.0",
+    "puppeteer": "^21.0.0"
+  },
+  "keywords": [
+    "ai-testing",
+    "deepseek",
+    "llama",
+    "ollama",
+    "mockmate",
+    "e2e",
+    "accessibility",
+    "security",
+    "performance"
+  ],
+  "author": "MockMate Team",
+  "license": "MIT"
+}

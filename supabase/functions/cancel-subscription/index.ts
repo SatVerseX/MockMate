@@ -4,58 +4,103 @@ import Razorpay from 'npm:razorpay@2.9.4'
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 Deno.serve(async (req) => {
+    // Handle CORS preflight
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
 
     try {
+        // Initialize Razorpay
         const razorpay = new Razorpay({
             key_id: Deno.env.get('RAZORPAY_KEY_ID') ?? '',
             key_secret: Deno.env.get('RAZORPAY_KEY_SECRET') ?? '',
         })
 
-        const supabaseClient = createClient(
-            Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-        )
+        // Create Supabase client with anon key for user auth
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+        const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+        const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
-        // Get the user from the Authorization header
+        // Get the Authorization header
         const authHeader = req.headers.get('Authorization')
         if (!authHeader) {
-            throw new Error('Authorization header missing')
+            return new Response(
+                JSON.stringify({ error: 'Authorization header missing' }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+            )
         }
 
-        const token = authHeader.replace('Bearer ', '')
-        const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
+        // Create client with the user's token to verify auth
+        const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+            global: {
+                headers: {
+                    Authorization: authHeader
+                }
+            }
+        })
+
+        // Get the authenticated user
+        const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
 
         if (authError || !user) {
-            throw new Error('Invalid authentication')
+            console.error('Auth error:', authError)
+            return new Response(
+                JSON.stringify({ error: 'Invalid authentication' }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+            )
         }
 
+        console.log('User authenticated:', user.id)
+
+        // Create admin client for database operations
+        const adminClient = createClient(supabaseUrl, supabaseServiceKey)
+
         // Get user's subscription from database
-        const { data: subscription, error: subError } = await supabaseClient
+        const { data: subscription, error: subError } = await adminClient
             .from('subscriptions')
             .select('*')
             .eq('user_id', user.id)
             .single()
 
         if (subError || !subscription) {
-            throw new Error('No active subscription found')
+            console.error('Subscription error:', subError)
+            return new Response(
+                JSON.stringify({ error: 'No active subscription found' }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+            )
+        }
+
+        console.log('Found subscription:', subscription.id, 'status:', subscription.status)
+
+        // Check if already cancelled
+        if (subscription.status === 'cancelled') {
+            return new Response(
+                JSON.stringify({
+                    success: true,
+                    message: 'Subscription is already cancelled',
+                    alreadyCancelled: true
+                }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
         }
 
         const razorpaySubId = subscription.razorpay_subscription_id
 
         if (!razorpaySubId) {
             // For one-time payments (One Day Pass), just update status
-            const { error: updateError } = await supabaseClient
+            const { error: updateError } = await adminClient
                 .from('subscriptions')
                 .update({ status: 'cancelled' })
                 .eq('user_id', user.id)
 
-            if (updateError) throw updateError
+            if (updateError) {
+                console.error('Update error:', updateError)
+                throw updateError
+            }
 
             return new Response(
                 JSON.stringify({ success: true, message: 'Subscription cancelled' }),
@@ -63,25 +108,46 @@ Deno.serve(async (req) => {
             )
         }
 
-        // Cancel on Razorpay (at end of current period)
-        const cancelledSub = await razorpay.subscriptions.cancel(razorpaySubId, false)
+        // Try to cancel on Razorpay (at end of current period)
+        console.log('Cancelling Razorpay subscription:', razorpaySubId)
+
+        let cancelledOnRazorpay = false
+        let razorpayError = null
+
+        try {
+            await razorpay.subscriptions.cancel(razorpaySubId, false)
+            cancelledOnRazorpay = true
+        } catch (error: any) {
+            razorpayError = error
+            console.log('Razorpay cancel error:', error.message || error)
+
+            // Check if already cancelled on Razorpay
+            if (error.error?.description?.includes('not cancellable') ||
+                error.message?.includes('not cancellable') ||
+                error.error?.description?.includes('already cancelled')) {
+                console.log('Subscription already cancelled on Razorpay, updating database...')
+                cancelledOnRazorpay = true
+            } else {
+                throw error
+            }
+        }
 
         // Update local database
-        const { error: updateError } = await supabaseClient
+        const { error: updateError } = await adminClient
             .from('subscriptions')
-            .update({
-                status: 'cancelled',
-                cancelled_at: new Date().toISOString()
-            })
+            .update({ status: 'cancelled' })
             .eq('user_id', user.id)
 
-        if (updateError) throw updateError
+        if (updateError) {
+            console.error('Database update error:', updateError)
+            throw updateError
+        }
 
         return new Response(
             JSON.stringify({
                 success: true,
                 message: 'Subscription cancelled successfully',
-                endsAt: cancelledSub.current_end ? new Date(cancelledSub.current_end * 1000).toISOString() : subscription.current_period_end
+                endsAt: subscription.current_period_end
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
@@ -89,8 +155,8 @@ Deno.serve(async (req) => {
     } catch (error) {
         console.error('Cancel subscription error:', error)
         return new Response(
-            JSON.stringify({ error: (error as Error).message }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+            JSON.stringify({ error: (error as Error).message || 'Failed to cancel subscription' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
         )
     }
 })

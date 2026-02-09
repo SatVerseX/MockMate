@@ -9,6 +9,11 @@ interface UserProfile {
   fullName: string | null;
   avatarUrl: string | null;
   isPro?: boolean;
+  // Study details
+  course: string | null;
+  college: string | null;
+  graduationYear: number | null;
+  specialization: string | null;
 }
 
 interface AuthContextType {
@@ -67,7 +72,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           email: userEmail,
           fullName: null,
           avatarUrl: null,
-          isPro: false
+          isPro: false,
+          course: null,
+          college: null,
+          graduationYear: null,
+          specialization: null
         });
         return;
       }
@@ -77,7 +86,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email: userEmail,
         fullName: profileData.full_name,
         avatarUrl: profileData.avatar_url,
-        isPro: !!subData
+        isPro: !!subData,
+        course: profileData.course || null,
+        college: profileData.college || null,
+        graduationYear: profileData.graduation_year || null,
+        specialization: profileData.specialization || null
       });
     } catch (error) {
       console.error('Error fetching profile:', error);

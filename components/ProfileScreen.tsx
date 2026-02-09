@@ -22,9 +22,11 @@ import {
   Loader2,
   Sparkles,
   ChevronRight,
-  Pencil, // Import Pencil icon
+  Pencil,
   X,
-  Check
+  Check,
+  GraduationCap,
+  Building
 } from 'lucide-react';
 
 interface ProfileScreenProps {
@@ -40,11 +42,27 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack }) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState('');
   const [showBillingModal, setShowBillingModal] = useState(false);
+  
+  // Study details state
+  const [isEditingStudy, setIsEditingStudy] = useState(false);
+  const [studyForm, setStudyForm] = useState({
+    course: '',
+    college: '',
+    graduationYear: '',
+    specialization: ''
+  });
 
   useEffect(() => {
     if (profile?.fullName) {
       setNewName(profile.fullName);
     }
+    // Initialize study form
+    setStudyForm({
+      course: profile?.course || '',
+      college: profile?.college || '',
+      graduationYear: profile?.graduationYear?.toString() || '',
+      specialization: profile?.specialization || ''
+    });
   }, [profile]);
 
   const handleSignOut = async () => {
@@ -67,6 +85,29 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack }) => {
   const handleCancelEdit = () => {
     setNewName(profile?.fullName || '');
     setIsEditingName(false);
+  };
+
+  const handleSaveStudy = async () => {
+    const success = await updateProfile({
+      course: studyForm.course || undefined,
+      college: studyForm.college || undefined,
+      graduationYear: studyForm.graduationYear ? parseInt(studyForm.graduationYear) : undefined,
+      specialization: studyForm.specialization || undefined
+    });
+    if (success) {
+      await refreshProfile();
+      setIsEditingStudy(false);
+    }
+  };
+
+  const handleCancelStudyEdit = () => {
+    setStudyForm({
+      course: profile?.course || '',
+      college: profile?.college || '',
+      graduationYear: profile?.graduationYear?.toString() || '',
+      specialization: profile?.specialization || ''
+    });
+    setIsEditingStudy(false);
   };
 
   const formatDate = (dateString: string | undefined) => {
@@ -257,6 +298,129 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack }) => {
                 </div>
               </div>
             </div>
+        </div>
+
+        {/* Study Details Card */}
+        <div className="glass-card p-6 bg-white/50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 shadow-sm rounded-2xl fade-in-up hover:shadow-lg hover:border-emerald-500/30 transition-all duration-500" style={{ animationDelay: '0.15s' }}>
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <GraduationCap className="w-5 h-5 text-emerald-500" />
+              Education & Study Details
+            </h3>
+            {!isEditingStudy ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEditingStudy(true)}
+                leftIcon={<Pencil className="w-4 h-4" />}
+              >
+                Edit
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCancelStudyEdit}
+                  disabled={isUpdating}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleSaveStudy}
+                  disabled={isUpdating}
+                  leftIcon={isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                >
+                  Save
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {isEditingStudy ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-semibold mb-2">
+                  Course / Degree
+                </label>
+                <input
+                  type="text"
+                  value={studyForm.course}
+                  onChange={(e) => setStudyForm({ ...studyForm, course: e.target.value })}
+                  placeholder="e.g., B.Tech, MBA, M.Sc"
+                  className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-semibold mb-2">
+                  Specialization / Major
+                </label>
+                <input
+                  type="text"
+                  value={studyForm.specialization}
+                  onChange={(e) => setStudyForm({ ...studyForm, specialization: e.target.value })}
+                  placeholder="e.g., Computer Science, Marketing"
+                  className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-semibold mb-2">
+                  College / University
+                </label>
+                <input
+                  type="text"
+                  value={studyForm.college}
+                  onChange={(e) => setStudyForm({ ...studyForm, college: e.target.value })}
+                  placeholder="e.g., IIT Delhi, Stanford University"
+                  className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-semibold mb-2">
+                  Graduation Year
+                </label>
+                <input
+                  type="number"
+                  value={studyForm.graduationYear}
+                  onChange={(e) => setStudyForm({ ...studyForm, graduationYear: e.target.value })}
+                  placeholder="e.g., 2025"
+                  min="1990"
+                  max="2035"
+                  className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <div className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-semibold mb-1">Course</div>
+                <div className="font-medium text-zinc-900 dark:text-white">
+                  {profile?.course || <span className="text-zinc-400">Not set</span>}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-semibold mb-1">Specialization</div>
+                <div className="font-medium text-zinc-900 dark:text-white">
+                  {profile?.specialization || <span className="text-zinc-400">Not set</span>}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-semibold mb-1">College</div>
+                <div className="font-medium text-zinc-900 dark:text-white flex items-center gap-1.5">
+                  <Building className="w-4 h-4 text-zinc-400" />
+                  {profile?.college || <span className="text-zinc-400">Not set</span>}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-semibold mb-1">Graduation</div>
+                <div className="font-medium text-zinc-900 dark:text-white">
+                  {profile?.graduationYear || <span className="text-zinc-400">Not set</span>}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Subscription & Billing */}

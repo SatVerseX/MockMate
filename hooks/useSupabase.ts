@@ -276,19 +276,33 @@ export function useUpdateProfile() {
     const { user } = useAuth();
     const [isUpdating, setIsUpdating] = useState(false);
 
-    const updateProfile = async (data: { fullName?: string; avatarUrl?: string }) => {
+    const updateProfile = async (data: {
+        fullName?: string;
+        avatarUrl?: string;
+        course?: string;
+        college?: string;
+        graduationYear?: number;
+        specialization?: string;
+    }) => {
         if (!user) return false;
 
         setIsUpdating(true);
 
         try {
+            const updateData: Record<string, any> = {
+                updated_at: new Date().toISOString(),
+            };
+
+            if (data.fullName !== undefined) updateData.full_name = data.fullName;
+            if (data.avatarUrl !== undefined) updateData.avatar_url = data.avatarUrl;
+            if (data.course !== undefined) updateData.course = data.course;
+            if (data.college !== undefined) updateData.college = data.college;
+            if (data.graduationYear !== undefined) updateData.graduation_year = data.graduationYear;
+            if (data.specialization !== undefined) updateData.specialization = data.specialization;
+
             const { error } = await supabase
                 .from('profiles')
-                .update({
-                    full_name: data.fullName,
-                    avatar_url: data.avatarUrl,
-                    updated_at: new Date().toISOString(),
-                })
+                .update(updateData)
                 .eq('id', user.id);
 
             if (error) throw error;

@@ -13,7 +13,7 @@ dist-ssr
 *.local
 .env
 .env.local
-
+.ai-tests/.env
 
 # Editor directories and files
 .vscode/*
