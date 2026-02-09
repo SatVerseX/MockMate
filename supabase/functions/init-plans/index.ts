@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
                 interval: 1,
                 description: 'Unlimited AI Interviews, Priority Support',
                 type: 'recurring', // Subscription plan
-                db_features: ["Unlimited AI Interviews", "Priority Support", "Detailed Analysis", "Valid for 1 Month"]
+                db_features: ["Unlimited AI Interviews", "AI Voice Interviewer", "Voice-Based Responses", "Audio Recording", "Priority Support", "Detailed Analysis", "Valid for 1 Month"]
             },
             {
                 name: 'One Day Pass',

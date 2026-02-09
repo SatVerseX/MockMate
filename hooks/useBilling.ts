@@ -245,7 +245,7 @@ export function useBilling() {
         detailed_analysis: ['one_day', 'starter', 'pro_monthly', 'pro_yearly'],
         pdf_download: ['one_day', 'starter', 'pro_monthly', 'pro_yearly'],
         interview_history: ['starter', 'pro_monthly', 'pro_yearly'],
-        audio_recording: ['pro_monthly', 'pro_yearly'],
+        audio_recording: ['starter', 'pro_monthly', 'pro_yearly'],
         progress_analytics: ['pro_monthly', 'pro_yearly'],
     };
 
