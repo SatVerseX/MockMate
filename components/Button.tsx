@@ -38,7 +38,7 @@ export const Button: React.FC<ButtonProps> = ({
   
   // Size variants
   const sizes: Record<ButtonSize, string> = {
-    sm: 'h-8 px-3 text-xs',
+    sm: 'h-7 px-3 text-xs',
     md: 'h-10 px-4 text-sm',
     lg: 'h-12 px-6 text-base',
     xl: 'h-14 px-8 text-lg',
