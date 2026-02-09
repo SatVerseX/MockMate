@@ -25,8 +25,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleSignOut = async () => {
+    setShowUserMenu(false); // Close menu immediately
     await signOut();
-    window.location.href = '/';
+    navigate('/');
   };
 
   // Handle scroll effect
