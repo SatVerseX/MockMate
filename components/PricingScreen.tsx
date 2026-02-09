@@ -290,8 +290,6 @@ export const PricingScreen: React.FC = () => {
               // Starter plan
               return [
                 'Unlimited AI Interviews',
-                'AI Voice Interviewer',
-                'Voice-Based Responses',
                 'Audio Recording',
                 'Detailed Analysis',
                 'PDF Reports',

@@ -242,7 +242,7 @@ export function useBilling() {
     // Feature access matrix
     const FEATURE_ACCESS: Record<GatedFeature, PlanTier[]> = {
         unlimited_interviews: ['one_day', 'starter', 'pro_monthly', 'pro_yearly'],
-        detailed_analysis: ['one_day', 'starter', 'pro_monthly', 'pro_yearly'],
+        detailed_analysis: ['free', 'one_day', 'starter', 'pro_monthly', 'pro_yearly'],
         pdf_download: ['one_day', 'starter', 'pro_monthly', 'pro_yearly'],
         interview_history: ['starter', 'pro_monthly', 'pro_yearly'],
         audio_recording: ['starter', 'pro_monthly', 'pro_yearly'],
