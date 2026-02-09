@@ -283,6 +283,8 @@ export function useUpdateProfile() {
         college?: string;
         graduationYear?: number;
         specialization?: string;
+        resumeUrl?: string;
+        resumeName?: string;
     }) => {
         if (!user) return false;
 
@@ -299,6 +301,8 @@ export function useUpdateProfile() {
             if (data.college !== undefined) updateData.college = data.college;
             if (data.graduationYear !== undefined) updateData.graduation_year = data.graduationYear;
             if (data.specialization !== undefined) updateData.specialization = data.specialization;
+            if (data.resumeUrl !== undefined) updateData.resume_url = data.resumeUrl;
+            if (data.resumeName !== undefined) updateData.resume_name = data.resumeName;
 
             const { error } = await supabase
                 .from('profiles')

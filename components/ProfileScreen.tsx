@@ -26,8 +26,14 @@ import {
   X,
   Check,
   GraduationCap,
-  Building
+  Building,
+  FileUp,
+  FileText,
+  Download,
+  Trash2
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { extractTextFromPDF } from '../utils/pdfUtils';
 
 interface ProfileScreenProps {
   onBack: () => void;
@@ -51,6 +57,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack }) => {
     graduationYear: '',
     specialization: ''
   });
+  
+  // Resume upload state
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
+  const [resumeError, setResumeError] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile?.fullName) {
@@ -108,6 +118,100 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack }) => {
       specialization: profile?.specialization || ''
     });
     setIsEditingStudy(false);
+  };
+
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const allowedTypes = ['application/pdf', 'text/plain', 'text/markdown'];
+    
+    if (file.size > maxSize) {
+      setResumeError('File size must be less than 5MB');
+      return;
+    }
+    
+    if (!allowedTypes.includes(file.type) && !file.name.endsWith('.md')) {
+      setResumeError('Only PDF, TXT, and MD files are allowed');
+      return;
+    }
+
+    setIsUploadingResume(true);
+    setResumeError(null);
+
+    try {
+      // Delete old resume if exists
+      if (profile?.resumeUrl) {
+        const oldPath = profile.resumeUrl.split('/').pop();
+        if (oldPath) {
+          await supabase.storage.from('resumes').remove([`${user.id}/${oldPath}`]);
+        }
+      }
+
+      // Upload new file
+      const fileExt = file.name.split('.').pop();
+      const fileName = `resume_${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('resumes')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('resumes')
+        .getPublicUrl(filePath);
+
+      // Update profile
+      const success = await updateProfile({
+        resumeUrl: urlData.publicUrl,
+        resumeName: file.name
+      });
+
+      if (success) {
+        await refreshProfile();
+      }
+    } catch (err) {
+      console.error('Resume upload error:', err);
+      setResumeError('Failed to upload resume. Please try again.');
+    } finally {
+      setIsUploadingResume(false);
+    }
+  };
+
+  const handleDeleteResume = async () => {
+    if (!user || !profile?.resumeUrl) return;
+    
+    if (!window.confirm('Are you sure you want to delete your resume?')) return;
+
+    setIsUploadingResume(true);
+    try {
+      // Extract file path from URL
+      const urlParts = profile.resumeUrl.split('/');
+      const fileName = urlParts.pop();
+      if (fileName) {
+        await supabase.storage.from('resumes').remove([`${user.id}/${fileName}`]);
+      }
+
+      // Clear from profile
+      const success = await updateProfile({
+        resumeUrl: '',
+        resumeName: ''
+      });
+
+      if (success) {
+        await refreshProfile();
+      }
+    } catch (err) {
+      console.error('Delete resume error:', err);
+      setResumeError('Failed to delete resume. Please try again.');
+    } finally {
+      setIsUploadingResume(false);
+    }
   };
 
   const formatDate = (dateString: string | undefined) => {
@@ -421,6 +525,98 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack }) => {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Resume Upload Card */}
+        <div className="glass-card p-6 bg-white/50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 shadow-sm rounded-2xl fade-in-up hover:shadow-lg hover:border-emerald-500/30 transition-all duration-500" style={{ animationDelay: '0.18s' }}>
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <FileText className="w-5 h-5 text-emerald-500" />
+              Resume
+            </h3>
+          </div>
+
+          {resumeError && (
+            <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              {resumeError}
+            </div>
+          )}
+
+          {profile?.resumeUrl ? (
+            <div className="flex items-center justify-between p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <div className="font-medium text-zinc-900 dark:text-white">
+                    {profile.resumeName || 'Resume'}
+                  </div>
+                  <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Uploaded • Ready for interviews
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={profile.resumeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+                  title="Download Resume"
+                >
+                  <Download className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                </a>
+                <button
+                  onClick={handleDeleteResume}
+                  disabled={isUploadingResume}
+                  className="p-2 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-red-50 dark:hover:bg-red-500/10 hover:border-red-200 dark:hover:border-red-500/20 transition-colors disabled:opacity-50"
+                  title="Delete Resume"
+                >
+                  {isUploadingResume ? (
+                    <Loader2 className="w-4 h-4 text-zinc-400 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  )}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <label className="cursor-pointer block">
+              <div className="border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl p-8 text-center hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all duration-300">
+                {isUploadingResume ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+                    <span className="text-sm text-zinc-500">Uploading...</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
+                      <FileUp className="w-6 h-6 text-emerald-500" />
+                    </div>
+                    <div className="text-sm font-medium text-zinc-900 dark:text-white mb-1">
+                      Upload your resume
+                    </div>
+                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                      PDF, TXT, or MD • Max 5MB
+                    </div>
+                  </>
+                )}
+              </div>
+              <input
+                type="file"
+                accept=".pdf,.txt,.md"
+                className="hidden"
+                onChange={handleResumeUpload}
+                disabled={isUploadingResume}
+              />
+            </label>
+          )}
+
+          <p className="mt-4 text-xs text-zinc-500 dark:text-zinc-400">
+            Your resume will be automatically used when setting up interview sessions.
+          </p>
         </div>
 
         {/* Subscription & Billing */}

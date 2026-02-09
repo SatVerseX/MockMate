@@ -14,6 +14,9 @@ interface UserProfile {
   college: string | null;
   graduationYear: number | null;
   specialization: string | null;
+  // Resume
+  resumeUrl: string | null;
+  resumeName: string | null;
 }
 
 interface AuthContextType {
@@ -76,7 +79,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           course: null,
           college: null,
           graduationYear: null,
-          specialization: null
+          specialization: null,
+          resumeUrl: null,
+          resumeName: null
         });
         return;
       }
@@ -90,7 +95,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         course: profileData.course || null,
         college: profileData.college || null,
         graduationYear: profileData.graduation_year || null,
-        specialization: profileData.specialization || null
+        specialization: profileData.specialization || null,
+        resumeUrl: profileData.resume_url || null,
+        resumeName: profileData.resume_name || null
       });
     } catch (error) {
       console.error('Error fetching profile:', error);

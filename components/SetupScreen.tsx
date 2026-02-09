@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { Button } from './Button';
 import { InterviewConfig, InterviewType, ExperienceLevel, INTERVIEW_TYPES } from '../types';
 import { 
@@ -23,7 +24,7 @@ import {
   SystemDesignIcon 
 } from './RichIcons';
 import { extractTextFromPDF } from '../utils/pdfUtils';
-import { Loader2 } from 'lucide-react'; // Import Loader2
+import { Loader2, CheckCircle2 } from 'lucide-react';
 
 interface SetupScreenProps {
   onComplete: (config: InterviewConfig) => void;
@@ -50,6 +51,16 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({ onComplete, onBack }) 
   const [interviewType, setInterviewType] = useState<InterviewType>('technical');
   const [duration, setDuration] = useState(25);
   const [isUploading, setIsUploading] = useState(false);
+  const [hasProfileResume, setHasProfileResume] = useState(false);
+  
+  const { profile } = useAuth();
+
+  // Load resume from profile if available
+  useEffect(() => {
+    if (profile?.resumeUrl && !resumeText) {
+      setHasProfileResume(true);
+    }
+  }, [profile, resumeText]);
 
   const selectedTypeInfo = INTERVIEW_TYPES.find(t => t.id === interviewType);
 
@@ -263,12 +274,32 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({ onComplete, onBack }) 
                         placeholder="Portfolio / LinkedIn URL"
                       />
                       
+                      {/* Show profile resume indicator */}
+                      {hasProfileResume && !resumeText && (
+                        <div className="mb-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                            <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                              Resume from profile: <span className="font-medium">{profile?.resumeName || 'Resume'}</span>
+                            </span>
+                          </div>
+                          <a
+                            href={profile?.resumeUrl || '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
+                          >
+                            View
+                          </a>
+                        </div>
+                      )}
+                      
                       <div className="relative">
                         <textarea
                           value={resumeText}
                           onChange={(e) => setResumeText(e.target.value)}
                           className="w-full min-h-[100px] bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all text-sm resize-y"
-                          placeholder="Paste your resume content here..."
+                          placeholder={hasProfileResume ? "Add additional context or paste different resume..." : "Paste your resume content here..."}
                         />
                         <div className="absolute bottom-3 right-3">
                            <label className="cursor-pointer bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs px-3 py-1.5 rounded-lg border border-emerald-500/20 transition-colors flex items-center gap-2">
@@ -285,7 +316,10 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({ onComplete, onBack }) 
                         </div>
                       </div>
                        <p className="text-[10px] text-zinc-400 mt-2 ml-1">
-                        Supported: Text, Markdown, PDF.
+                        {hasProfileResume && !resumeText 
+                          ? "✓ Your profile resume will be used. Add text above to supplement."
+                          : "Supported: Text, Markdown, PDF."
+                        }
                       </p>
                     </div>
                   </div>
