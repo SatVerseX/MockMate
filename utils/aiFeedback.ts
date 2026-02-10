@@ -57,66 +57,93 @@ export const generateInterviewFeedback = async (
             }
         `;
 
-        const response = await genAI.models.generateContent({
-            model: 'gemini-2.0-flash',
-            config: {
-                systemInstruction: {
-                    parts: [{ text: systemPrompt }]
-                },
-                responseMimeType: 'application/json',
-                responseSchema: {
-                    type: 'OBJECT',
-                    properties: {
-                        metrics: {
-                            type: 'OBJECT',
-                            properties: {
-                                communication: { type: 'NUMBER' },
-                                technicalKnowledge: { type: 'NUMBER' },
-                                problemSolving: { type: 'NUMBER' },
-                                confidence: { type: 'NUMBER' },
-                                clarity: { type: 'NUMBER' },
-                                overallScore: { type: 'NUMBER' },
-                            },
-                            required: ["communication", "technicalKnowledge", "problemSolving", "confidence", "clarity", "overallScore"]
+        const MAX_RETRIES = 3;
+        let lastError: any = null;
+
+        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+            try {
+                const response = await genAI.models.generateContent({
+                    model: 'gemini-2.0-flash',
+                    config: {
+                        systemInstruction: {
+                            parts: [{ text: systemPrompt }]
                         },
-                        feedback: {
+                        responseMimeType: 'application/json',
+                        responseSchema: {
                             type: 'OBJECT',
                             properties: {
-                                summary: { type: 'STRING' },
-                                strengths: {
-                                    type: 'ARRAY',
-                                    items: { type: 'STRING' }
+                                metrics: {
+                                    type: 'OBJECT',
+                                    properties: {
+                                        communication: { type: 'NUMBER' },
+                                        technicalKnowledge: { type: 'NUMBER' },
+                                        problemSolving: { type: 'NUMBER' },
+                                        confidence: { type: 'NUMBER' },
+                                        clarity: { type: 'NUMBER' },
+                                        overallScore: { type: 'NUMBER' },
+                                    },
+                                    required: ["communication", "technicalKnowledge", "problemSolving", "confidence", "clarity", "overallScore"]
                                 },
-                                areasToImprove: {
-                                    type: 'ARRAY',
-                                    items: { type: 'STRING' }
-                                },
-                                tips: {
-                                    type: 'ARRAY',
-                                    items: { type: 'STRING' }
-                                },
+                                feedback: {
+                                    type: 'OBJECT',
+                                    properties: {
+                                        summary: { type: 'STRING' },
+                                        strengths: {
+                                            type: 'ARRAY',
+                                            items: { type: 'STRING' }
+                                        },
+                                        areasToImprove: {
+                                            type: 'ARRAY',
+                                            items: { type: 'STRING' }
+                                        },
+                                        tips: {
+                                            type: 'ARRAY',
+                                            items: { type: 'STRING' }
+                                        },
+                                    },
+                                    required: ["summary", "strengths", "areasToImprove", "tips"]
+                                }
                             },
-                            required: ["summary", "strengths", "areasToImprove", "tips"]
+                            required: ["metrics", "feedback"]
                         }
                     },
-                    required: ["metrics", "feedback"]
-                }
-            },
-            contents: [
-                {
-                    role: 'user',
-                    parts: [{ text: `TRANSCRIPT:\n\n${formattedTranscript}` }]
-                }
-            ]
-        });
+                    contents: [
+                        {
+                            role: 'user',
+                            parts: [{ text: `TRANSCRIPT:\n\n${formattedTranscript}` }]
+                        }
+                    ]
+                });
 
-        const resultText = response.text;
-        if (!resultText) {
-            throw new Error("Empty response from AI");
+                const resultText = response.text;
+                if (!resultText) {
+                    throw new Error("Empty response from AI");
+                }
+
+                const result = JSON.parse(resultText) as AIAnalysisResult;
+                return result;
+
+            } catch (err: any) {
+                lastError = err;
+                const status = err?.status || err?.httpStatusCode || err?.code;
+                const isRateLimit = status === 429 ||
+                    err?.message?.includes('429') ||
+                    err?.message?.toLowerCase()?.includes('rate limit') ||
+                    err?.message?.toLowerCase()?.includes('resource exhausted');
+
+                if (isRateLimit && attempt < MAX_RETRIES - 1) {
+                    const delay = Math.pow(2, attempt + 1) * 1000; // 2s, 4s, 8s
+                    console.warn(`Gemini API rate limited (attempt ${attempt + 1}/${MAX_RETRIES}). Retrying in ${delay / 1000}s...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    continue;
+                }
+
+                // Non-retryable error or last attempt — throw to outer catch
+                throw err;
+            }
         }
 
-        const result = JSON.parse(resultText) as AIAnalysisResult;
-        return result;
+        throw lastError || new Error("All retry attempts failed");
 
     } catch (error) {
         console.error("AI Analysis Failed:", error);

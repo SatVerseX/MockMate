@@ -519,16 +519,16 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
             <p className="text-zinc-500 dark:text-zinc-400 text-sm">{selectedTypeInfo?.title} Interview</p>
           </div>
 
-          {/* Right: Hero Image */}
-          <div className="relative rounded-2xl overflow-hidden">
-            <img 
-              src="/results-hero.png" 
-              alt="Success Celebration" 
-              className="absolute w-full h-full object-cover"
-            />
-            <div className="absolute bottom-0 left-0 right-0 p-8">
-               <h3 className="text-xl font-bold text-white mb-2">Keep Crushing It!</h3>
-               
+          {/* Right: Celebration Card */}
+          <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 min-h-[280px] flex flex-col items-center justify-center p-8 text-center">
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
+              <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-300/10 rounded-full blur-2xl" />
+            </div>
+            <div className="relative z-10">
+              <div className="text-6xl mb-4">🎉</div>
+              <h3 className="text-xl font-bold text-white mb-2">Keep Crushing It!</h3>
+              <p className="text-emerald-100 text-sm">Practice makes perfect. Keep going!</p>
             </div>
           </div>
         </div>

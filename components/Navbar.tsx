@@ -231,6 +231,21 @@ export const Navbar: React.FC<NavbarProps> = ({
                   Settings
                 </Button>
               )}
+
+              {user && (
+                <>
+                  <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-2" />
+                  <Button 
+                    variant="outline" 
+                    size="lg" 
+                    onClick={() => { setIsMobileMenuOpen(false); handleSignOut(); }} 
+                    leftIcon={<LogOut className="w-5 h-5 text-red-500" />}
+                    className="text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20 hover:bg-red-50 dark:hover:bg-red-500/10"
+                  >
+                    Sign Out
+                  </Button>
+                </>
+              )}
           </div>
         </div>
       </div>
