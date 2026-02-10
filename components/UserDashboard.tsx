@@ -201,6 +201,87 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
     return currentStreak;
   }, [interviews]);
 
+  // Personalized daily challenge based on user profile
+  const dailyChallenge = useMemo(() => {
+    const spec = (profile?.specialization || '').toLowerCase();
+    const course = (profile?.course || '').toLowerCase();
+    const hasResume = !!profile?.resumeUrl;
+    const isRecent = profile?.graduationYear 
+      ? profile.graduationYear >= new Date().getFullYear() 
+      : true;
+
+    // Challenge pools based on specialization/course
+    const challengeMap: Record<string, { title: string; description: string }[]> = {
+      'cs': [
+        { title: 'Data Structures: Binary Trees', description: 'Master tree traversals, BST operations, and balanced trees.' },
+        { title: 'System Design: URL Shortener', description: 'Design a globally scalable URL shortening service.' },
+        { title: 'Algorithms: Dynamic Programming', description: 'Crack DP patterns — from memoization to tabulation.' },
+        { title: 'OOP Concepts Deep Dive', description: 'Inheritance, polymorphism, SOLID principles — nail the fundamentals.' },
+        { title: 'Concurrency & Multithreading', description: 'Threads, locks, deadlocks — understand parallel programming.' },
+        { title: 'Database Design: E-Commerce', description: 'Schema design, indexing, and query optimization.' },
+        { title: 'API Design Best Practices', description: 'RESTful design, versioning, authentication patterns.' },
+      ],
+      'web': [
+        { title: 'Frontend: React Performance', description: 'Virtual DOM, memoization, lazy loading — optimize your React apps.' },
+        { title: 'Full-Stack: Auth System Design', description: 'OAuth, JWT, session management — build secure authentication.' },
+        { title: 'CSS Architecture Challenge', description: 'Master component-based styling, responsive design, and CSS-in-JS.' },
+        { title: 'REST vs GraphQL Debate', description: 'Compare API paradigms, trade-offs, and when to use each.' },
+        { title: 'Progressive Web Apps', description: 'Service workers, caching strategies, and offline-first design.' },
+      ],
+      'data': [
+        { title: 'SQL & Data Modeling', description: 'Complex joins, window functions, and schema design patterns.' },
+        { title: 'Machine Learning Pipeline', description: 'Feature engineering, model selection, and deployment strategies.' },
+        { title: 'Data Visualization Challenge', description: 'Tell a story with data — dashboards, charts, and insights.' },
+        { title: 'Statistics for Interviews', description: 'Probability, hypothesis testing, and A/B testing fundamentals.' },
+        { title: 'Big Data Architecture', description: 'Hadoop, Spark, data lakes — handle data at scale.' },
+      ],
+      'ai': [
+        { title: 'Neural Network Fundamentals', description: 'Backpropagation, activation functions, and architecture choices.' },
+        { title: 'NLP: Text Classification', description: 'Tokenization, embeddings, transformers — process natural language.' },
+        { title: 'Computer Vision Basics', description: 'CNNs, object detection, and image classification techniques.' },
+        { title: 'ML System Design', description: 'Design end-to-end ML systems — from data pipeline to inference.' },
+      ],
+      'general': [
+        { title: 'Behavioral: Leadership Stories', description: 'Prepare compelling STAR stories about leadership and teamwork.' },
+        { title: 'HR Round: Salary Negotiation', description: 'Practice discussing compensation, benefits, and expectations.' },
+        { title: 'Problem Solving Under Pressure', description: 'Think out loud, structure your approach, and stay calm.' },
+        { title: 'Tell Me About Yourself', description: 'Craft a compelling 2-minute pitch that highlights your strengths.' },
+        { title: 'Why This Company?', description: 'Research-backed answers that show genuine interest and fit.' },
+      ],
+    };
+
+    // Determine which pool to use based on profile
+    let pool = challengeMap['general'];
+
+    if (spec.includes('ai') || spec.includes('machine learning') || spec.includes('deep learning') || course.includes('ai')) {
+      pool = [...challengeMap['ai'], ...challengeMap['cs']];
+    } else if (spec.includes('data') || spec.includes('analytics') || course.includes('data')) {
+      pool = [...challengeMap['data'], ...challengeMap['cs']];
+    } else if (spec.includes('web') || spec.includes('frontend') || spec.includes('fullstack') || spec.includes('full stack') || spec.includes('mern') || spec.includes('mean')) {
+      pool = [...challengeMap['web'], ...challengeMap['cs']];
+    } else if (spec.includes('computer') || spec.includes('software') || spec.includes('cs') || spec.includes('programming') || 
+               course.includes('btech') || course.includes('b.tech') || course.includes('b.e') || course.includes('engineering') || 
+               course.includes('mca') || course.includes('bca') || course.includes('msc computer') || course.includes('bsc computer')) {
+      pool = [...challengeMap['cs'], ...challengeMap['general']];
+    }
+
+    // Add resume-based suggestions if resume is uploaded
+    if (hasResume && pool !== challengeMap['general']) {
+      pool.push({ title: 'Resume Walk-Through Practice', description: 'Practice explaining your projects and experience from your resume.' });
+    }
+
+    // Add fresher-specific challenges
+    if (isRecent) {
+      pool.push({ title: 'Campus Placement Prep', description: 'Common aptitude, coding, and HR questions for placements.' });
+    }
+
+    // Pick a challenge based on day of year (rotates daily)
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+    const challenge = pool[dayOfYear % pool.length];
+
+    return challenge;
+  }, [profile]);
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white transition-colors duration-300 font-sans selection:bg-emerald-500/30">
       <Navbar 
@@ -336,9 +417,9 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                       <Zap className="w-5 h-5 text-yellow-300 fill-current" />
                       <span className="text-xs font-bold uppercase tracking-widest text-emerald-100/90">Daily Challenge</span>
                     </div>
-                    <h3 className="text-3xl font-bold text-white tracking-tight">System Design: URL Shortener</h3>
+                    <h3 className="text-3xl font-bold text-white tracking-tight">{dailyChallenge.title}</h3>
                     <p className="text-emerald-50 max-w-lg text-lg leading-relaxed">
-                      Master global scale architecture. Practice system design interviews today.
+                      {dailyChallenge.description}
                     </p>
                   </div>
                   <Button 

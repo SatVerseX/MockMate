@@ -127,6 +127,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Skip if this is the initial session (already handled above)
         if (!initialSessionHandled && event === 'INITIAL_SESSION') return;
 
+        // Clean up hash fragment left by OAuth redirect (e.g., /dashboard# or /dashboard#access_token=...)
+        if (event === 'SIGNED_IN' && window.location.hash) {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
         

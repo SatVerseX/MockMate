@@ -130,7 +130,7 @@ export const GuidePage: React.FC = () => {
               variant="ghost"
               size="sm"
               leftIcon={<ArrowLeft className="w-4 h-4" />}
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/dashboard')}
               className="text-zinc-600 dark:text-zinc-400"
             >
               Back
