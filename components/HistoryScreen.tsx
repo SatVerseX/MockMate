@@ -136,8 +136,22 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onBack, onSelectIn
             </div>
           )}
 
+          {/* Error State */}
+          {!isLoading && error && (
+            <div className="flex flex-col items-center justify-center py-24 fade-in-up">
+              <div className="mb-4 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/20">
+                <p className="text-red-600 dark:text-red-400 text-center">
+                  Failed to load interview history. Please try again.
+                </p>
+              </div>
+              <Button onClick={() => window.location.reload()} variant="primary">
+                Retry
+              </Button>
+            </div>
+          )}
+
           {/* Empty State */}
-          {!isLoading && history.length === 0 && (
+          {!isLoading && !error && history.length === 0 && (
             <div className="flex flex-col items-center justify-center py-24 fade-in-up">
               <div className="mb-6">
                 <IconWrapper gradient="from-zinc-500 to-slate-500" size="lg">
@@ -156,7 +170,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onBack, onSelectIn
           )}
 
           {/* Main Content - only show when we have data */}
-          {!isLoading && history.length > 0 && (
+          {!isLoading && !error && history.length > 0 && (
             <>
           
           {/* Stats Cards */}

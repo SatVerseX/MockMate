@@ -252,9 +252,11 @@ const AppContent: React.FC = () => {
           <Route 
             path="/history" 
             element={
-              <HistoryScreen 
-                onBack={() => navigate('/dashboard')}
-              />
+              <ProtectedRoute>
+                <HistoryScreen 
+                  onBack={() => navigate('/dashboard')}
+                />
+              </ProtectedRoute>
             } 
           />
           
