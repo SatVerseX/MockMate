@@ -65,7 +65,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .select('status, plan_id')
         .eq('user_id', userId)
         .in('status', ['active', 'trialing'])
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
@@ -108,19 +108,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Initialize auth state
   useEffect(() => {
+    let initialSessionHandled = false;
+
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id, session.user.email || '');
+        await fetchProfile(session.user.id, session.user.email || '');
       }
       setIsLoading(false);
+      initialSessionHandled = true;
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        // Skip if this is the initial session (already handled above)
+        if (!initialSessionHandled && event === 'INITIAL_SESSION') return;
+
         setSession(session);
         setUser(session?.user ?? null);
         
